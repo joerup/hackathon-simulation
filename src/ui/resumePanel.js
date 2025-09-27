@@ -20,7 +20,7 @@ export function initResumePanel() {
 
   const helper = document.createElement("p");
   helper.className = "helper";
-  helper.textContent = "We will hand the file to a SnapDragon LLM to detect keywords, GPA hints, internships, clubs, buzzwords, and more.";
+  helper.textContent = "We will hand the file to a Snapdragon-powered LLM to detect keywords, GPA hints, internships, clubs, buzzwords, and more.";
   panel.appendChild(helper);
 
   const uploadLabel = document.createElement("label");
@@ -85,7 +85,7 @@ export function initResumePanel() {
 
     try {
       setLoadingState(analyzeButton, true);
-      showStatus(statusMessage, "Contacting SnapDragon LLM. Hold tight.");
+      showStatus(statusMessage, "Contacting Snapdragon-powered AI. Hold tight.");
 
       const payload = await buildResumePayload(file);
       const stats = await requestResumeStats(payload);
@@ -94,7 +94,7 @@ export function initResumePanel() {
       showStatus(statusMessage, "Analysis complete. Ready for arena wiring.");
     } catch (error) {
       console.error("Resume analysis failed", error);
-      showStatus(statusMessage, "SnapDragon call failed. Check the console and API key.", true);
+      showStatus(statusMessage, "API call failed. Check the console and API key.", true);
     } finally {
       setLoadingState(analyzeButton, false);
     }

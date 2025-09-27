@@ -5,7 +5,7 @@ export async function requestResumeStats(payload) {
   const { apiKey, apiUrl, model } = snapdragonConfig;
 
   if (!apiKey) {
-    console.warn("SnapDragon API key missing. Returning placeholder stats.");
+    console.warn("LLM API key missing. Returning placeholder stats.");
     return createPlaceholderStats(payload);
   }
 
@@ -33,7 +33,7 @@ export async function requestResumeStats(payload) {
 
   if (!response.ok) {
     const errorDetail = await safeReadError(response);
-    throw new Error(`SnapDragon request failed (${response.status}): ${errorDetail}`);
+    throw new Error(`LLM API request failed (${response.status}): ${errorDetail}`);
   }
 
   const data = await response.json();
@@ -93,7 +93,7 @@ function createPlaceholderStats(payload) {
   const baseLuck = generateDeterministicLuck(payload?.text || payload?.fileName || Date.now().toString());
 
   return {
-    summary: "SnapDragon API key missing - replace with live response.",
+    summary: "LLM API key missing - replace with live response.",
     experience: 0,
     networking: 0,
     energyScore: 50,
