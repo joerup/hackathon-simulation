@@ -1,7 +1,7 @@
 {
   "name": "simulation",
   "version": "1.0.0",
-  "type":"module",
+  "type": "module",
   "description": "hackathon simulation",
   "main": "main.js",
   "scripts": {

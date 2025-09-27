@@ -24,7 +24,7 @@ export async function requestResumeStats(payload) {
         },
         {
           role: "User",
-          content: "Hello!"
+          content: payload.text || "Hello!"
         }
       ],
       stream: false
