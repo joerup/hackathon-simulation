@@ -20,11 +20,11 @@ export async function requestResumeStats(payload) {
       messages: [
         {
           role: "System",
-          content: "You are a helpful assistant."
+          content: "You are a resume analysis assistant. Create a concise, professional summary of the candidate based on their resume. Focus on key skills, experience, and qualifications. Keep it under 150 words."
         },
         {
           role: "User",
-          content: payload.text || "Hello!"
+          content: payload.text ? `Please create a professional summary for this resume:\n\n${payload.text}` : "No resume text provided."
         }
       ],
       stream: false
@@ -36,13 +36,14 @@ export async function requestResumeStats(payload) {
     throw new Error(`LLM API request failed (${response.status}): ${errorDetail}`);
   }
 
+  // Process the LLM response to get the professional summary
   const data = await response.json();
   const message = data?.choices?.[0]?.message;
-  const content = message?.content || "";
+  const llmSummary = message?.content || "";
 
-  // Return mock stats with the actual LLM response in summary
+  // Return stats with LLM-generated summary, fallback to extracted text if needed
   return {
-    summary: content,
+    summary: llmSummary || payload?.text || "No text could be extracted from the resume.",
     experience: 5,
     networking: 3,
     energyScore: 75,
@@ -92,8 +93,17 @@ function normalizeStats(rawStats, payload) {
 function createPlaceholderStats(payload) {
   const baseLuck = generateDeterministicLuck(payload?.text || payload?.fileName || Date.now().toString());
 
+  // Create a basic summary from extracted text if available
+  let summary;
+  if (payload?.text && payload.text.trim()) {
+    const previewText = payload.text.substring(0, 300).replace(/\s+/g, ' ').trim();
+    summary = `Resume Preview: ${previewText}${payload.text.length > 300 ? '...' : ''}\n\n(Note: LLM API key missing - showing raw extracted text)`;
+  } else {
+    summary = "No text could be extracted from the resume. (LLM API key missing)";
+  }
+
   return {
-    summary: "LLM API key missing - replace with live response.",
+    summary,
     experience: 0,
     networking: 0,
     energyScore: 50,

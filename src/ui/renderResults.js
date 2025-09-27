@@ -19,7 +19,7 @@ export function renderResults(container, stats) {
 
   const note = document.createElement("p");
   note.className = "note";
-  note.textContent = "These signals come straight from the SnapDragon LLM response. Wire them into the arena stats next.";
+  note.textContent = "These signals come straight from the Snapdragon-powered LLM response. Wire them into the arena stats next.";
   container.appendChild(note);
 }
 
@@ -28,10 +28,48 @@ function createSummaryCard(summary) {
   summaryCard.className = "summary-card";
 
   const heading = document.createElement("h2");
-  heading.textContent = "Summary";
+  heading.textContent = "Professional Summary";
 
-  const body = document.createElement("p");
-  body.textContent = summary;
+  const body = document.createElement("div");
+  body.className = "summary-text";
+  
+  // Clean and format the text
+  const cleanText = summary
+    .replace(/\s+/g, ' ')  // Normalize whitespace
+    .trim();
+  
+  if (cleanText.length > 800) {
+    // For long text, show preview with expand option
+    const preview = cleanText.substring(0, 800) + "...";
+    const previewP = document.createElement("p");
+    previewP.textContent = preview;
+    
+    const expandBtn = document.createElement("button");
+    expandBtn.textContent = "Show Full Text";
+    expandBtn.className = "expand-btn";
+    expandBtn.style.cssText = "margin-top: 10px; padding: 5px 10px; background: #007acc; color: white; border: none; border-radius: 4px; cursor: pointer;";
+    
+    let isExpanded = false;
+    expandBtn.addEventListener("click", () => {
+      if (!isExpanded) {
+        previewP.textContent = cleanText;
+        expandBtn.textContent = "Show Less";
+        isExpanded = true;
+      } else {
+        previewP.textContent = preview;
+        expandBtn.textContent = "Show Full Text";
+        isExpanded = false;
+      }
+    });
+    
+    body.appendChild(previewP);
+    body.appendChild(expandBtn);
+  } else {
+    // For shorter text, show it all
+    const p = document.createElement("p");
+    p.textContent = cleanText;
+    body.appendChild(p);
+  }
 
   summaryCard.appendChild(heading);
   summaryCard.appendChild(body);

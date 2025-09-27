@@ -85,9 +85,12 @@ export function initResumePanel() {
 
     try {
       setLoadingState(analyzeButton, true);
-      showStatus(statusMessage, "Contacting Snapdragon-powered AI. Hold tight.");
+      showStatus(statusMessage, "Extracting text from resume...");
 
       const payload = await buildResumePayload(file);
+      console.log(`📄 Extracted text from ${file.name}:`, payload.text?.slice(0, 500) + (payload.text?.length > 500 ? '...' : ''));
+      
+      showStatus(statusMessage, "Generating professional summary with AI...");
       const stats = await requestResumeStats(payload);
 
       renderResults(resultsContainer, stats);
@@ -112,101 +115,124 @@ function showStatus(element, message, isWarning = false) {
   element.classList.toggle("warning", Boolean(isWarning));
 }
 
-async function extractPdfText(file) {
+async function buildResumePayload(file) {
+  const isTextLike = file.type.startsWith("text/") || /\.(txt|md|rtf|csv)$/i.test(file.name);
+  const isPdf = file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
+
+  // Handle text files
+  if (isTextLike) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onerror = () => reject(new Error(`Failed to read file: ${reader.error?.message || "unknown error"}`));
+      reader.onload = () => {
+        resolve({
+          fileName: file.name,
+          mimeType: file.type || "text/plain",
+          text: typeof reader.result === "string" ? reader.result : "",
+          base64: null
+        });
+      };
+      reader.readAsText(file);
+    });
+  }
+
+  // Handle PDF files with text extraction
+  if (isPdf) {
+    try {
+      const text = await extractPdfText(file);
+      const base64 = await fileToBase64(file);
+      return {
+        fileName: file.name,
+        mimeType: file.type || "application/pdf",
+        text: text || "", // Fallback to empty string if extraction fails
+        base64: base64
+      };
+    } catch (error) {
+      console.warn(`PDF text extraction failed for ${file.name}:`, error.message);
+      // Fallback to base64 only
+      const base64 = await fileToBase64(file);
+      return {
+        fileName: file.name,
+        mimeType: file.type || "application/pdf",
+        text: "",
+        base64: base64
+      };
+    }
+  }
+
+  // Handle other binary files
+  const base64 = await fileToBase64(file);
+  return {
+    fileName: file.name,
+    mimeType: file.type || "application/octet-stream",
+    text: "",
+    base64: base64
+  };
+}
+
+function fileToBase64(file) {
   return new Promise((resolve, reject) => {
-    // Check if PDF.js is available
-    if (!window.pdfjsLib) {
-      reject(new Error("PDF.js library not loaded"));
-      return;
-    }
-
-    // Set worker source if not already set
-    if (!window.pdfjsLib.GlobalWorkerOptions.workerSrc) {
-      window.pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
-    }
-
     const reader = new FileReader();
-
-    reader.onerror = () => {
-      reject(new Error(`Failed to read PDF file: ${reader.error?.message || "unknown error"}`));
+    reader.onerror = () => reject(new Error(`Failed to read file: ${reader.error?.message || "unknown error"}`));
+    reader.onload = () => {
+      const dataUrl = typeof reader.result === "string" ? reader.result : "";
+      const parts = dataUrl.split(",");
+      const base64Payload = parts.length > 1 ? parts[1] : "";
+      resolve(base64Payload);
     };
-
-    reader.onload = async () => {
-      try {
-        const arrayBuffer = reader.result;
-        const pdf = await window.pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-
-        let fullText = "";
-        for (let i = 1; i <= pdf.numPages; i++) {
-          const page = await pdf.getPage(i);
-          const textContent = await page.getTextContent();
-          const pageText = textContent.items.map(item => item.str).join(" ");
-          fullText += pageText + "\n";
-        }
-
-        resolve(fullText.trim());
-      } catch (error) {
-        reject(new Error(`Failed to parse PDF: ${error.message}`));
-      }
-    };
-
-    reader.readAsArrayBuffer(file);
+    reader.readAsDataURL(file);
   });
 }
 
-function buildResumePayload(file) {
-  const isTextLike = file.type.startsWith("text/") || /\.(txt|md|rtf|csv)$/i.test(file.name);
-  const isPdf = file.type === "application/pdf" || /\.pdf$/i.test(file.name);
-
+function extractPdfText(file) {
   return new Promise(async (resolve, reject) => {
     try {
-      if (isPdf) {
-        const extractedText = await extractPdfText(file);
-        resolve({
-          fileName: file.name,
-          mimeType: file.type || "application/pdf",
-          text: extractedText,
-          base64: null
+      // Load PDF.js dynamically if not already loaded
+      if (typeof window.pdfjsLib === 'undefined') {
+        const script = document.createElement('script');
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+        document.head.appendChild(script);
+        
+        await new Promise((resolveScript) => {
+          script.onload = resolveScript;
+          script.onerror = () => reject(new Error('Failed to load PDF.js library'));
         });
-        return;
       }
 
-      const reader = new FileReader();
+      // Set worker source
+      if (!window.pdfjsLib.GlobalWorkerOptions.workerSrc) {
+        window.pdfjsLib.GlobalWorkerOptions.workerSrc = 
+          'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+      }
 
-      reader.onerror = () => {
-        reject(new Error(`Failed to read file: ${reader.error?.message || "unknown error"}`));
-      };
+      const arrayBuffer = await new Promise((resolveBuffer, rejectBuffer) => {
+        const reader = new FileReader();
+        reader.onerror = () => rejectBuffer(new Error('Failed to read PDF file'));
+        reader.onload = () => resolveBuffer(reader.result);
+        reader.readAsArrayBuffer(file);
+      });
 
-      reader.onload = () => {
-        if (isTextLike) {
-          resolve({
-            fileName: file.name,
-            mimeType: file.type || "text/plain",
-            text: typeof reader.result === "string" ? reader.result : "",
-            base64: null
-          });
-          return;
+      const pdf = await window.pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      let fullText = "";
+      
+      // Extract text from each page
+      for (let i = 1; i <= Math.min(pdf.numPages, 10); i++) { // Limit to 10 pages for performance
+        const page = await pdf.getPage(i);
+        const textContent = await page.getTextContent();
+        const pageText = textContent.items
+          .map(item => item.str)
+          .join(" ")
+          .replace(/\s+/g, " ")
+          .trim();
+        
+        if (pageText) {
+          fullText += pageText + "\n\n";
         }
-
-        const dataUrl = typeof reader.result === "string" ? reader.result : "";
-        const parts = dataUrl.split(",");
-        const base64Payload = parts.length > 1 ? parts[1] : "";
-
-        resolve({
-          fileName: file.name,
-          mimeType: file.type || "application/octet-stream",
-          text: "",
-          base64: base64Payload
-        });
-      };
-
-      if (isTextLike) {
-        reader.readAsText(file);
-      } else {
-        reader.readAsDataURL(file);
       }
+      
+      resolve(fullText.trim());
     } catch (error) {
-      reject(error);
+      reject(new Error(`PDF parsing failed: ${error.message}`));
     }
   });
 }
