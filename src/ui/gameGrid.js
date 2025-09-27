@@ -101,13 +101,7 @@ export class GameGrid {
 export function initGameGrid(size = 10) {
   const gameGrid = new GameGrid(size);
 
-  // Add students
-  gameGrid.addAgent(0, 0, 1, true);  // Student
-  gameGrid.addAgent(9, 9, 2, true);  // Student
-  gameGrid.addAgent(5, 2, 3, true);  // Student
-  gameGrid.addAgent(3, 7, 4, true);  // Student
-
-  // Add recruiters
+  // Add recruiters (no students initially)
   gameGrid.addAgent(8, 1, 5, false); // Recruiter
   gameGrid.addAgent(1, 6, 6, false); // Recruiter
   gameGrid.addAgent(7, 8, 7, false); // Recruiter
