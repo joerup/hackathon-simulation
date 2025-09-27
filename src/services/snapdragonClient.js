@@ -24,7 +24,20 @@ export async function requestResumeStats(payload) {
         },
         {
           role: "User",
-          content: payload.text || "Hello!"
+          content: `You are given a student resume. DO NOT MAKE ANY EXTERNAL CALLS. RESPOND ONLY IN TEXT. Read the resume and respond in the following format: \
+          resume_data: {\
+          summary (string)\\n \
+          experience (integer)\\n\
+          networking (integer)\\n\
+          energyScore (integer 0-100)\\n\
+          fillerRatio (number between 0 and 1)\\n\
+          luck (integer 0-100)\\n\
+          gpa(string or null)\\n\
+          internships (integer)\\n\
+          buzzwords (array of strings)\\n\
+          skills (array of objects with label (string) and score (integer 0-100))\
+          }\
+          Do not make any tool calls. Resume data follows: ${payload.text}`
         }
       ],
       stream: false
@@ -38,21 +51,50 @@ export async function requestResumeStats(payload) {
 
   const data = await response.json();
   const message = data?.choices?.[0]?.message;
-  const content = message?.content || "";
+  const rawContent = typeof message?.content === "string" ? message.content.trim() : "";
+  const statsObject = parseResumeData(rawContent);
 
-  // Return mock stats with the actual LLM response in summary
-  return {
-    summary: content,
-    experience: 5,
-    networking: 3,
-    energyScore: 75,
-    fillerRatio: 0.2,
-    luck: generateDeterministicLuck(payload?.text || "default"),
-    gpa: null,
-    internships: 1,
-    buzzwords: ["AI", "Python"],
-    skills: [{ label: "Communication", count: 1 }]
-  };
+  return normalizeStats(statsObject, payload);
+}
+
+function parseResumeData(rawContent) {
+  if (!rawContent) {
+    throw new Error("LLM response was empty.");
+  }
+
+  const match = rawContent.match(/resume_data\s*:\s*({[\s\S]*})/i);
+  let candidate = match ? match[1] : rawContent;
+  candidate = candidate.trim();
+
+  if (!candidate.startsWith('{')) {
+    candidate = `{${candidate}`;
+  }
+  if (!candidate.endsWith('}')) {
+    candidate = `${candidate}}`;
+  }
+
+  let parsed;
+  try {
+    parsed = JSON.parse(candidate);
+  } catch (error) {
+    let withQuotedKeys = candidate
+      .replace(/([,{]\s*)([A-Za-z0-9_]+)\s*:/g, (full, prefix, key) => `${prefix}"${key}":`)
+      .replace(/([0-9\]}"'])\s*(?="[A-Za-z0-9_]+"\s*:)/g, '$1,')
+      .replace(/"score"\s*:\s*"([0-9]+(?:\.[0-9]+)?)"/gi, '"score": $1');
+
+    try {
+      parsed = JSON.parse(withQuotedKeys);
+    } catch (innerError) {
+      console.error("Failed to parse LLM response", { rawContent, candidate, withQuotedKeys, error: innerError });
+      throw new Error("Unable to parse LLM response into structured data.");
+    }
+  }
+
+  if (parsed && typeof parsed === "object" && parsed.resume_data) {
+    return parsed.resume_data;
+  }
+
+  return parsed;
 }
 
 function normalizeStats(rawStats, payload) {
@@ -66,19 +108,24 @@ function normalizeStats(rawStats, payload) {
   };
 
   const normalized = {
-    summary: rawStats.summary || rawStats.overview || "",
+    summary: typeof rawStats.summary === "string" ? rawStats.summary : "",
     experience: coalesceNumber(rawStats.experience, rawStats.experienceScore, rawStats.experienceCount),
     networking: coalesceNumber(rawStats.networking, rawStats.networkingScore, rawStats.networkingCount),
     energyScore: coalesceNumber(rawStats.energyScore, rawStats.energy?.score),
-    fillerRatio: typeof rawStats.fillerRatio === "number" ? rawStats.fillerRatio : rawStats.energy?.fillerRatio,
+    fillerRatio:
+      typeof rawStats.fillerRatio === "number"
+        ? clamp(rawStats.fillerRatio, 0, 1)
+        : typeof rawStats.energy?.fillerRatio === "number"
+        ? clamp(rawStats.energy.fillerRatio, 0, 1)
+        : 0,
     luck: coalesceNumber(rawStats.luck, rawStats.luckScore),
-    gpa: rawStats.gpa ?? rawStats.gpaValue ?? null,
+    gpa: typeof rawStats.gpa === "string" ? rawStats.gpa : rawStats.gpa ?? null,
     internships: coalesceNumber(rawStats.internships, rawStats.internshipCount),
-    buzzwords: Array.isArray(rawStats.buzzwords) ? rawStats.buzzwords : [],
+    buzzwords: Array.isArray(rawStats.buzzwords)
+      ? rawStats.buzzwords.map(String)
+      : [],
     skills: Array.isArray(rawStats.skills)
-      ? rawStats.skills
-      : Array.isArray(rawStats.skillMatches)
-      ? rawStats.skillMatches
+      ? rawStats.skills.map(normalizeSkill)
       : []
   };
 
@@ -87,6 +134,25 @@ function normalizeStats(rawStats, payload) {
   }
 
   return normalized;
+}
+
+function normalizeSkill(skill) {
+  if (!skill || typeof skill !== "object") {
+    return { label: "Skill", score: 0 };
+  }
+
+  const label = typeof skill.label === "string" ? skill.label : skill.name || "Skill";
+  const value = typeof skill.score === "number" && Number.isFinite(skill.score)
+    ? skill.score
+    : typeof skill.count === "number" && Number.isFinite(skill.count)
+    ? skill.count
+    : 0;
+
+  return { label, score: value };
+}
+
+function clamp(value, min, max) {
+  return Math.min(Math.max(value, min), max);
 }
 
 function createPlaceholderStats(payload) {
