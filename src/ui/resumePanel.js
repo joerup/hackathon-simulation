@@ -94,7 +94,13 @@ export function initResumePanel() {
       const stats = await requestResumeStats(payload);
 
       renderResults(resultsContainer, stats);
-      showStatus(statusMessage, "Analysis complete. Ready for arena wiring.");
+      
+      // Check if the summary indicates an error
+      if (stats.summary.startsWith("❌") || stats.summary.startsWith("⚠️")) {
+        showStatus(statusMessage, "Analysis completed with issues. See summary for details.", true);
+      } else {
+        showStatus(statusMessage, "Analysis complete. Ready for arena wiring.");
+      }
     } catch (error) {
       console.error("Resume analysis failed", error);
       showStatus(statusMessage, "API call failed. Check the console and API key.", true);
