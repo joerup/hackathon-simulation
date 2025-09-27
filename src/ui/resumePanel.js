@@ -138,37 +138,18 @@ export function initResumePanel(gameGrid = null) {
       const size = gameState.grid.length;
       let emptyPosition = null;
 
-      console.log("Looking for empty position. Grid size:", size);
-      console.log("Current game state:", gameState);
+      console.log("Looking for random empty position. Grid size:", size);
 
-      // Look for an empty position systematically
-      for (let y = 0; y < size; y++) {
-        for (let x = 0; x < size; x++) {
-          const cell = gameState.grid[y][x];
-          console.log(`Checking position (${x}, ${y}): type=${cell.type}, agent=${cell.agent}`);
-          
-          if (cell.type === 'walkable' && (!cell.agent || cell.agent === null)) {
-            emptyPosition = { x, y };
-            console.log("Found empty position:", emptyPosition);
-            break;
-          }
-        }
-        if (emptyPosition) break;
-      }
-
-      // If no empty position found systematically, try random positions
-      if (!emptyPosition) {
-        console.log("No empty position found systematically, trying random positions...");
-        for (let attempts = 0; attempts < 100; attempts++) {
-          const x = Math.floor(Math.random() * size);
-          const y = Math.floor(Math.random() * size);
-          const cell = gameState.grid[y][x];
-          
-          if (cell.type === 'walkable' && (!cell.agent || cell.agent === null)) {
-            emptyPosition = { x, y };
-            console.log("Found random empty position:", emptyPosition);
-            break;
-          }
+      // Try random positions for student spawning
+      for (let attempts = 0; attempts < 100; attempts++) {
+        const x = Math.floor(Math.random() * size);
+        const y = Math.floor(Math.random() * size);
+        const cell = gameState.grid[y][x];
+        
+        if (cell.type === 'walkable' && (!cell.agent || cell.agent === null)) {
+          emptyPosition = { x, y };
+          console.log("Found random empty position:", emptyPosition);
+          break;
         }
       }
 
