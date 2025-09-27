@@ -7,7 +7,7 @@ document.addEventListener("DOMContentLoaded", () => {
   initResumePanel();
 
   const gameGrid = initGameGrid(10);
-  const gridContainer = gameGrid.render();
+  const gridContainer = gameGrid.getRenderer().getContainer();
 
   const uiOverlay = document.querySelector('.ui-overlay');
   if (uiOverlay) {
