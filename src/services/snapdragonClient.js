@@ -107,9 +107,16 @@ function createErrorStats(errorMessage, payload) {
 }
 
 function getLuckValue(payload) {
-  // Generate consistent luck based on available data
+  // Generate luck with base influenced by resume content + random variance
   const seed = payload?.text || payload?.fileName || Date.now().toString();
-  return generateDeterministicLuck(seed);
+  const baseLuck = generateDeterministicLuck(seed);
+  
+  // Add random variance: ±20 points from base luck
+  const variance = Math.floor(Math.random() * 41) - 20; // -20 to +20
+  const finalLuck = baseLuck + variance;
+  
+  // Keep luck within bounds (0-100)
+  return Math.max(0, Math.min(100, finalLuck));
 }
 
 async function safeReadError(response) {
