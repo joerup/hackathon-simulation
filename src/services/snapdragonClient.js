@@ -19,16 +19,15 @@ export async function requestResumeStats(payload) {
       model,
       messages: [
         {
-          role: "system",
-          content: "You are an analyst that converts student resumes into RPG stats for a job hunt simulation. Respond with JSON only."
+          role: "System",
+          content: "You are a helpful assistant."
         },
         {
-          role: "user",
-          content: buildResumePrompt(payload)
+          role: "User",
+          content: "Hello!"
         }
       ],
-      response_format: { type: "json_object" },
-      temperature: 0.2
+      stream: false
     })
   });
 
@@ -39,29 +38,21 @@ export async function requestResumeStats(payload) {
 
   const data = await response.json();
   const message = data?.choices?.[0]?.message;
-  let parsed = message?.parsed;
+  const content = message?.content || "";
 
-  if (!parsed && message?.content) {
-    try {
-      parsed = JSON.parse(message.content);
-    } catch (error) {
-      console.warn("Failed to parse SnapDragon JSON response", error);
-    }
-  }
-
-  if (!parsed) {
-    throw new Error("SnapDragon response missing JSON payload");
-  }
-
-  return normalizeStats(parsed, payload);
-}
-
-function buildResumePrompt(payload) {
-  if (payload.base64) {
-    return `Analyze this resume file (base64 encoded). Return JSON with keys: summary, experience, networking, energyScore, fillerRatio, luck, gpa, internships, buzzwords (array), skills (array of {"label","score"}). Base64: ${payload.base64}`;
-  }
-
-  return `Analyze this resume text and respond with JSON using fields: summary, experience, networking, energyScore, fillerRatio, luck, gpa, internships, buzzwords (array), skills (array of {"label","score"}). Resume text: ${payload.text}`;
+  // Return mock stats with the actual LLM response in summary
+  return {
+    summary: content,
+    experience: 5,
+    networking: 3,
+    energyScore: 75,
+    fillerRatio: 0.2,
+    luck: generateDeterministicLuck(payload?.text || "default"),
+    gpa: null,
+    internships: 1,
+    buzzwords: ["AI", "Python"],
+    skills: [{ label: "Communication", count: 1 }]
+  };
 }
 
 function normalizeStats(rawStats, payload) {

@@ -15,6 +15,9 @@ const createWindow = () => {
   });
 
   win.loadFile("index.html");
+
+  // Open DevTools to see console logs
+  win.webContents.openDevTools();
 };
 
 app.whenReady().then(() => {
