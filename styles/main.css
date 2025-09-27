@@ -274,6 +274,44 @@ button:disabled {
   color: #ff9090;
 }
 
+.game-grid-container {
+  margin-top: 2rem;
+  background: rgba(8, 10, 24, 0.82);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  padding: 2rem;
+  backdrop-filter: blur(18px);
+  box-shadow: 0 40px 120px rgba(0, 0, 0, 0.45);
+}
+
+.grid-title {
+  margin: 0 0 1.5rem;
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #ffffff;
+  text-align: center;
+}
+
+.game-grid {
+  max-width: fit-content;
+  margin: 0 auto;
+}
+
+.grid-cell {
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.grid-cell:hover {
+  transform: scale(1.1);
+  z-index: 10;
+  border-color: rgba(255, 255, 255, 0.4) !important;
+}
+
+.grid-legend {
+  justify-content: center;
+}
+
 @media (max-width: 680px) {
   .control-panel {
     padding: 1.9rem 1.5rem 2.3rem;
@@ -287,5 +325,20 @@ button:disabled {
   button {
     width: 100%;
     justify-content: center;
+  }
+
+  .game-grid-container {
+    padding: 1.5rem;
+    margin-top: 1.5rem;
+  }
+
+  .grid-title {
+    font-size: 1.5rem;
+  }
+
+  .grid-cell {
+    width: 25px !important;
+    height: 25px !important;
+    font-size: 12px !important;
   }
 }
