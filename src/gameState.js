@@ -74,6 +74,7 @@ export class GameState {
       inConversation: false,
       conversationPartner: null,
       conversationId: null,
+      lastConvoCooldown: 0, // Cooldown timer for conversation engagement
       get x() { return this.position[0]; },
       get y() { return this.position[1]; },
       set x(value) { this.position[0] = value; },
@@ -210,16 +211,18 @@ export class GameState {
   checkForConversations() {
     // Single linear scan through all agents
     for (let agent of this.agents) {
-      // Skip agents already in conversation
-      if (this.conversationState.isAgentInConversation(agent.id)) continue;
+      // Skip agents already in conversation or on cooldown
+      if (this.conversationState.isAgentInConversation(agent.id) || agent.lastConvoCooldown > 0) continue;
 
       // Check 4 cardinal neighbors for available agents
       const neighbors = this.getAdjacentPositions(agent.x, agent.y);
       for (let neighbor of neighbors) {
         const otherAgent = this.findAgentAt(neighbor.x, neighbor.y);
         
-        // If we found an agent at this neighbor position who isn't in conversation
-        if (otherAgent && !this.conversationState.isAgentInConversation(otherAgent.id)) {
+        // If we found an agent at this neighbor position who isn't in conversation and not on cooldown
+        if (otherAgent && 
+            !this.conversationState.isAgentInConversation(otherAgent.id) && 
+            otherAgent.lastConvoCooldown === 0) {
           // Create conversation between these two agents
           this.conversationState.createConversation(agent, otherAgent);
 
@@ -256,6 +259,13 @@ export class GameState {
   processFrame() {
     this.frameCount++;
 
+    // Decrement cooldown timers for all agents
+    this.agents.forEach(agent => {
+      if (agent.lastConvoCooldown > 0) {
+        agent.lastConvoCooldown--;
+      }
+    });
+
     // First check for new conversations
     this.checkForConversations();
 
@@ -287,6 +297,7 @@ export class GameState {
         inConversation: agent.inConversation,
         conversationPartner: agent.conversationPartner,
         conversationId: agent.conversationId,
+        lastConvoCooldown: agent.lastConvoCooldown,
         stats: { ...agent.stats }
       })),
       frameCount: this.frameCount,
@@ -333,7 +344,8 @@ export class GameState {
       id: agent.id,
       isStudent: agent.isStudent,
       position: [...agent.position],
-      inConversation: agent.inConversation
+      inConversation: agent.inConversation,
+      lastConvoCooldown: agent.lastConvoCooldown
     }));
   }
 

@@ -51,7 +51,7 @@ export class GameGrid {
       // Continue animation after delay
       setTimeout(() => {
         this.animationId = requestAnimationFrame(animate);
-      }, 500); // 2 second delay between frames
+      }, 1000); // 2 second delay between frames
     };
 
     this.animationId = requestAnimationFrame(animate);

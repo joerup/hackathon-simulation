@@ -56,13 +56,14 @@ export class ConversationState {
     conversation.endTime = Date.now();
     conversation.duration = conversation.endTime - conversation.startTime;
 
-    // Update agent states - reset conversation properties
+    // Update agent states - reset conversation properties and set cooldown
     conversation.participants.forEach(agentId => {
       const agent = this.agents.find(a => a.id === agentId);
       if (agent) {
         agent.inConversation = false;
         agent.conversationPartner = null;
         agent.conversationId = null;
+        agent.lastConvoCooldown = 5; // Set cooldown to 5 timesteps
       }
       this.agentConversations.delete(agentId);
     });
@@ -120,11 +121,12 @@ export class ConversationState {
    * This ensures all agent properties match the global conversation state
    */
   synchronizeAgentStates() {
-    // Reset all agents' conversation properties
+    // Reset all agents' conversation properties (but preserve cooldown)
     this.agents.forEach(agent => {
       agent.inConversation = false;
       agent.conversationPartner = null;
       agent.conversationId = null;
+      // Note: lastConvoCooldown is preserved and managed by GameState
     });
 
     // Set conversation properties for agents in active conversations
