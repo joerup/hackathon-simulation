@@ -118,15 +118,6 @@ function buildRecruiterStats() {
       role: randomItem(POSITIONS),
       preferences: randomItem(PREFERENCES)
     },
-    // Personality preferences are generated dynamically in interactionScoring.js
-    // based on company culture, but we can store base preferences here
-    personalityPreferences: {
-      genuine: Number((Math.random() * 0.4 + 0.6).toFixed(2)), // 0.6-1.0
-      snarky: Number((Math.random() * 0.6 + 0.2).toFixed(2)),  // 0.2-0.8
-      professional: Number((Math.random() * 0.3 + 0.7).toFixed(2)), // 0.7-1.0
-      casual: Number((Math.random() * 0.5 + 0.3).toFixed(2))   // 0.3-0.8
-    },
-    viewRadius: randomInt(2, 4) // How far the recruiter can "see" for networking score
   };
 }
 

@@ -71,7 +71,7 @@ export class LeaderboardSidebar {
       align-items: center;
       justify-content: center;
       transition: all 0.3s ease;
-      margin: 0.5rem 1rem 0.75rem auto;
+      margin: 0.5rem auto 0.75rem 1rem;
       padding: 0 6px;
       font-weight: 500;
       white-space: nowrap;
@@ -81,13 +81,24 @@ export class LeaderboardSidebar {
     this.toggleButton.addEventListener('mouseenter', () => {
       this.toggleButton.style.background = 'rgba(139, 113, 85, 0.35)';
       this.toggleButton.style.color = '#5a4a3a';
-      this.toggleButton.style.transform = this.isCollapsed ? 'translateX(-50%) scale(1.1)' : 'scale(1.1)';
+      const currentTransform = this.toggleButton.style.transform;
+      if (currentTransform.includes('translateX')) {
+        this.toggleButton.style.transform = 'translateX(-50%) scale(1.1)';
+      } else {
+        this.toggleButton.style.transform = 'scale(1.1)';
+      }
     });
 
     this.toggleButton.addEventListener('mouseleave', () => {
       this.toggleButton.style.background = 'rgba(139, 113, 85, 0.2)';
       this.toggleButton.style.color = S.accent;
-      this.toggleButton.style.transform = this.isCollapsed ? 'translateX(-50%)' : 'none';
+      // Preserve existing transform and remove scale
+      const currentTransform = this.toggleButton.style.transform;
+      if (currentTransform.includes('translateX')) {
+        this.toggleButton.style.transform = 'translateX(-50%)';
+      } else {
+        this.toggleButton.style.transform = 'none';
+      }
     });
 
     this.toggleButton.addEventListener('click', () => {
@@ -332,7 +343,7 @@ export class LeaderboardSidebar {
         padding: 0.5rem;
         border-bottom: 1px solid ${S.borderLight};
         display: grid;
-        grid-template-columns: 35px 1fr auto auto auto auto;
+        grid-template-columns: 35px 1fr auto auto auto;
         gap: 0.4rem;
         font-weight: 600;
         font-size: 0.75rem;
@@ -359,7 +370,7 @@ export class LeaderboardSidebar {
         const row = this.createElement('div', `
           padding: 0.4rem 0.5rem;
           display: grid;
-          grid-template-columns: 35px 1fr auto auto auto auto;
+          grid-template-columns: 35px 1fr auto auto auto;
           gap: 0.4rem;
           border-bottom: 1px solid ${S.borderLight};
           transition: background-color 0.2s ease;
@@ -416,14 +427,6 @@ export class LeaderboardSidebar {
           min-width: 30px;
         `, recruitersMet.toString());
 
-        // Total Scores
-        const scoresEl = this.createElement('div', `
-          text-align: center;
-          color: ${S.primary};
-          font-weight: 500;
-          min-width: 35px;
-        `, totalScores);
-
         // Distance Traveled
         const distEl = this.createElement('div', `
           text-align: center;
@@ -436,7 +439,6 @@ export class LeaderboardSidebar {
         row.appendChild(nameEl);
         row.appendChild(connectionsEl);
         row.appendChild(recruitersEl);
-        row.appendChild(scoresEl);
         row.appendChild(distEl);
 
         studentsList.appendChild(row);
@@ -532,7 +534,7 @@ export class LeaderboardSidebar {
     this.toggleButton.style.width = '110px';
     this.toggleButton.style.height = '28px';
     this.toggleButton.style.borderRadius = '6px';
-    this.toggleButton.style.margin = '0.5rem 1rem 0.75rem auto';
+    this.toggleButton.style.margin = '0.5rem auto 0.75rem 1rem';
     this.toggleButton.style.zIndex = 'auto';
     
     this.updateBodyMargin();

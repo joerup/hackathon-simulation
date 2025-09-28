@@ -1,9 +1,4 @@
 import { ConversationService } from './services/conversationService.js';
-import { 
-  calculateInteractionScore, 
-  createInteractionRecord, 
-  determineJobOffer 
-} from './logic/interactionScoring.js';
 
 /**
  * ConversationState class - Manages all conversations globally
@@ -62,21 +57,13 @@ export class ConversationState {
    * @param {string} conversationId - Conversation ID
    */
   async startAsyncConversation(agent1, agent2, conversationId) {
-    try {
-      await this.conversationService.startConversation(agent1, agent2, conversationId);
-      
-      // Mark conversation as complete after LLM processing
-      const conversation = this.conversations.get(conversationId);
-      if (conversation) {
-        conversation.isComplete = true;
-      }
-    } catch (error) {
-      console.error('Error in async conversation:', error);
-      // Mark as complete even if there was an error
-      const conversation = this.conversations.get(conversationId);
-      if (conversation) {
-        conversation.isComplete = true;
-      }
+    // Always mark conversation as complete - the service handles all errors internally
+    await this.conversationService.startConversation(agent1, agent2, conversationId);
+    
+    // Mark conversation as complete after processing (service never fails)
+    const conversation = this.conversations.get(conversationId);
+    if (conversation) {
+      conversation.isComplete = true;
     }
   }
 
@@ -109,7 +96,7 @@ export class ConversationState {
         agent.inConversation = false;
         agent.conversationPartner = null;
         agent.conversationId = null;
-        agent.lastConvoCooldown = 15; // Set cooldown to 5 timesteps
+        agent.lastConvoCooldown = 15;
         
         // Track recruiter conversations for students
         if (agent.isStudent && typeof agent.recruitersSpokenTo === 'number') {
@@ -137,7 +124,7 @@ export class ConversationState {
    * @param {Object} conversation - Conversation data
    */
   processInteractionScoring(agent1, agent2, conversation) {
-    // Only score student-recruiter interactions
+    // Only process student-recruiter interactions
     let student, recruiter;
     
     if (agent1.isStudent && !agent2.isStudent) {
@@ -147,68 +134,39 @@ export class ConversationState {
       student = agent2;
       recruiter = agent1;
     } else {
-      // Student-student or recruiter-recruiter conversation, no scoring needed
+      // Not a student-recruiter interaction, skip
       return;
     }
 
-    try {
-      // Get conversation data from the service if available
-      const conversationData = this.conversationService.getConversationData(conversation.id) || {};
+    console.log(`Processing interaction: ${student.stats.name} ↔ ${recruiter.stats.company}`);
+
+    // Simple job offer chance based on student stats
+    const offerChance = Math.min(0.3, (student.stats?.gpa || 3.0 - 2.0) * 0.1 + (student.stats?.experience || 0) * 0.05);
+    const receivedOffer = Math.random() < offerChance;
+    
+    if (receivedOffer) {
+      if (typeof student.stats.jobOffers !== 'number') {
+        student.stats.jobOffers = 0;
+      }
+      student.stats.jobOffers++;
       
-      // Prepare conversation metadata
-      const convMetadata = {
-        duration: conversation.duration,
-        messageCount: conversationData.messageCount || Math.floor(conversation.duration / 2000) + 1, // Estimate if not available
-        quality: conversation.quality || 0.5
-      };
-
-      // Calculate the interaction score
-      const scoreData = calculateInteractionScore(student, recruiter, convMetadata);
+      // Also update the top-level jobOffers property for consistency
+      if (typeof student.jobOffers !== 'number') {
+        student.jobOffers = 0;
+      }
+      student.jobOffers++;
       
-      // Create interaction record
-      const interactionRecord = createInteractionRecord(
-        student, 
-        recruiter, 
-        scoreData, 
-        conversation.endTime || Date.now()
-      );
-
-      // Store the interaction in the student's history
-      if (!student.stats.interactionHistory) {
-        student.stats.interactionHistory = [];
-      }
-      student.stats.interactionHistory.push(interactionRecord);
-
-      // Update total interaction score
-      if (typeof student.stats.totalInteractionScore !== 'number') {
-        student.stats.totalInteractionScore = 0;
-      }
-      student.stats.totalInteractionScore += scoreData.totalScore;
-
-      // Check for job offer
-      const receivedOffer = determineJobOffer(scoreData, student);
-      if (receivedOffer) {
-        if (typeof student.stats.jobOffers !== 'number') {
-          student.stats.jobOffers = 0;
-        }
-        student.stats.jobOffers++;
-        
-        // Add job offer details to the interaction record
-        interactionRecord.resultedInOffer = true;
-        interactionRecord.offerCompany = recruiter.stats.company;
-        
-        console.log(`🎉 ${student.stats.name} received a job offer from ${recruiter.stats.company}! (Score: ${scoreData.totalScore})`);
-      } else {
-        interactionRecord.resultedInOffer = false;
-      }
-
-      // Log the interaction for debugging
-      console.log(`📊 Interaction scored: ${student.stats.name} ↔ ${recruiter.stats.company} | Score: ${scoreData.totalScore} | Personality: ${scoreData.studentPersonality.type.name} | Offer: ${receivedOffer ? 'Yes' : 'No'}`);
-
-    } catch (error) {
-      console.error('Error processing interaction scoring:', error);
-      // Continue gracefully without scoring
+      console.log(`🎉 ${student.stats.name} received a job offer from ${recruiter.stats.company}! Total offers: ${student.stats.jobOffers}`);
     }
+    
+    // Increment recruiter count
+    if (typeof student.recruitersSpokenTo === 'number') {
+      student.recruitersSpokenTo++;
+    } else {
+      student.recruitersSpokenTo = 1;
+    }
+    
+    console.log(`✅ Interaction completed: ${student.stats.name} met with ${recruiter.stats.company} (${receivedOffer ? 'OFFER' : 'no offer'}) - Total recruiters: ${student.recruitersSpokenTo}`);
   }
 
   /**
@@ -249,7 +207,10 @@ export class ConversationState {
       conversation.duration = Date.now() - conversation.startTime;
       
       // Check if conversation is complete and should end
-      if (conversation.isComplete) {
+      if (conversation.isComplete && !conversation.endingScheduled) {
+        // Mark as scheduled to prevent multiple timeouts
+        conversation.endingScheduled = true;
+        
         // End conversation after a short delay to allow other agents to move
         setTimeout(() => {
           this.endConversation(conversation.id);

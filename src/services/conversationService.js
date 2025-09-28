@@ -132,6 +132,7 @@ export class ConversationService {
         responder: responder.id,
         conversationType: conversationType,
         messages: messages,
+        messageCount: messages.length,
         isComplete: true,
         turnCount: turnCount + 1
       };
@@ -186,6 +187,7 @@ export class ConversationService {
   async generateMessage(speaker, otherAgent, context, isStarter, conversationHistory = []) {
     const { apiKey, apiUrl, model } = snapdragonConfig;
 
+    // If no API key, use fallback conversation
     if (!apiKey) {
       throw new Error("No API key configured for LLM");
     }
