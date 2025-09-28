@@ -6,9 +6,17 @@ export class ChatSidebar {
     this.gameGrid = gameGrid;
     this.sidebar = null;
     this.chatContainer = null;
+    this.toggleButton = null;
+    this.contentWrapper = null;
+    this.emptyStateMessage = null;
     this.isInitialized = false;
+    this.isCollapsed = false;
+    this.expandedWidth = '350px';
+    this.collapsedWidth = '50px';
     this.messageCount = 0;
     this.maxMessages = 100; // Limit messages to prevent memory issues
+    this.conversationGroups = new Map(); // Map<conversationId, conversationGroup>
+    this.maxConversations = 20; // Limit number of conversation groups
   }
 
   /**
@@ -23,46 +31,84 @@ export class ChatSidebar {
       position: fixed;
       top: 60px;
       right: 0;
-      width: 350px;
+      width: ${this.expandedWidth};
       height: calc(100vh - 60px);
       background: rgba(8, 10, 24, 0.95);
       border-left: 1px solid rgba(255, 255, 255, 0.1);
       backdrop-filter: blur(20px);
       z-index: 50;
-      overflow-y: auto;
-      padding: 1.5rem;
+      overflow: visible;
       box-shadow: -2px 0 20px rgba(0, 0, 0, 0.3);
       display: flex;
       flex-direction: column;
+      transition: width 0.3s ease, padding 0.3s ease;
     `;
 
-    // Header
-    const header = document.createElement('div');
-    header.style.cssText = `
-      margin-bottom: 1rem;
-      padding-bottom: 1rem;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    `;
-
-    const title = document.createElement('h3');
-    title.textContent = 'Live Chat';
-    title.style.cssText = `
-      margin: 0;
-      color: #ffffff;
-      font-size: 1.2rem;
-      font-weight: 600;
-    `;
-
-    const subtitle = document.createElement('p');
-    subtitle.textContent = 'Real-time conversations';
-    subtitle.style.cssText = `
-      margin: 0.25rem 0 0 0;
+    // Toggle button - positioned to look inline when expanded, centered when collapsed
+    this.toggleButton = document.createElement('button');
+    this.toggleButton.className = 'sidebar-toggle';
+    this.toggleButton.innerHTML = '<span style="margin-right: 4px;">▶</span>Live Chat'; // Arrow + header text
+    this.toggleButton.style.cssText = `
+      width: 95px;
+      height: 24px;
+      border: none;
+      border-radius: 4px;
+      background: rgba(96, 112, 238, 0.3);
       color: #8fa0ff;
-      font-size: 0.85rem;
+      cursor: pointer;
+      font-size: 11px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s ease;
+      margin: 0.5rem 0 0.75rem 1rem;
+      padding: 0 6px;
+      font-weight: 500;
+      white-space: nowrap;
+      flex-shrink: 0;
     `;
 
-    header.appendChild(title);
-    header.appendChild(subtitle);
+    this.toggleButton.addEventListener('mouseenter', () => {
+      this.toggleButton.style.background = 'rgba(96, 112, 238, 0.5)';
+      this.toggleButton.style.color = '#ffffff';
+      // Preserve existing transform and add scale
+      const currentTransform = this.toggleButton.style.transform;
+      if (currentTransform.includes('translateX')) {
+        this.toggleButton.style.transform = 'translateX(-50%) scale(1.1)';
+      } else {
+        this.toggleButton.style.transform = 'scale(1.1)';
+      }
+    });
+
+    this.toggleButton.addEventListener('mouseleave', () => {
+      this.toggleButton.style.background = 'rgba(96, 112, 238, 0.3)';
+      this.toggleButton.style.color = '#8fa0ff';
+      // Preserve existing transform and remove scale
+      const currentTransform = this.toggleButton.style.transform;
+      if (currentTransform.includes('translateX')) {
+        this.toggleButton.style.transform = 'translateX(-50%)';
+      } else {
+        this.toggleButton.style.transform = 'none';
+      }
+    });
+
+    this.toggleButton.addEventListener('click', () => {
+      this.toggle();
+    });
+
+    // Content wrapper for padding control
+    this.contentWrapper = document.createElement('div');
+    this.contentWrapper.className = 'sidebar-content';
+    this.contentWrapper.style.cssText = `
+      padding: 0.5rem 1.5rem 1.5rem;
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: visible;
+      display: flex;
+      flex-direction: column;
+      transition: opacity 0.2s ease;
+    `;
+
 
     // Chat container
     this.chatContainer = document.createElement('div');
@@ -71,24 +117,69 @@ export class ChatSidebar {
       flex: 1;
       display: flex;
       flex-direction: column;
-      gap: 0.75rem;
+      gap: 1rem;
       overflow-y: auto;
+      overflow-x: hidden;
       padding-right: 0.5rem;
+      min-height: 0;
     `;
 
     // Add scrollbar styling
     this.chatContainer.style.scrollbarWidth = 'thin';
     this.chatContainer.style.scrollbarColor = 'rgba(96, 112, 238, 0.3) transparent';
 
-    // Assemble sidebar
-    this.sidebar.appendChild(header);
-    this.sidebar.appendChild(this.chatContainer);
+    // Add webkit scrollbar styling for the main chat container
+    if (!document.querySelector('#main-chat-scrollbar-styles')) {
+      const mainScrollbarStyle = document.createElement('style');
+      mainScrollbarStyle.id = 'main-chat-scrollbar-styles';
+      mainScrollbarStyle.textContent = `
+        .chat-messages::-webkit-scrollbar {
+          width: 8px;
+        }
+        .chat-messages::-webkit-scrollbar-track {
+          background: rgba(8, 10, 24, 0.3);
+          border-radius: 4px;
+        }
+        .chat-messages::-webkit-scrollbar-thumb {
+          background: rgba(96, 112, 238, 0.4);
+          border-radius: 4px;
+        }
+        .chat-messages::-webkit-scrollbar-thumb:hover {
+          background: rgba(96, 112, 238, 0.6);
+        }
+      `;
+      document.head.appendChild(mainScrollbarStyle);
+    }
+
+    // Empty state placeholder
+    this.emptyStateMessage = document.createElement('div');
+    this.emptyStateMessage.className = 'empty-state-message';
+    this.emptyStateMessage.textContent = 'No live messages yet...';
+    this.emptyStateMessage.style.cssText = `
+      color: rgba(255, 255, 255, 0.5);
+      font-size: 0.9rem;
+      font-style: italic;
+      text-align: center;
+      padding: 2rem 1rem;
+      align-self: center;
+      margin: auto 0;
+    `;
+    
+    // Initially show empty state
+    this.chatContainer.appendChild(this.emptyStateMessage);
+
+    // Assemble content wrapper - header and chat only
+    this.contentWrapper.appendChild(this.chatContainer);
+
+    // Assemble sidebar - button stays outside content wrapper but positioned inline when expanded
+    this.sidebar.appendChild(this.toggleButton);
+    this.sidebar.appendChild(this.contentWrapper);
 
     // Add to page
     document.body.appendChild(this.sidebar);
 
     // Add right margin to body to account for sidebar
-    document.body.style.marginRight = '350px';
+    this.updateBodyMargin();
 
     this.isInitialized = true;
 
@@ -98,20 +189,46 @@ export class ChatSidebar {
   /**
    * Add a new chat message to the sidebar
    */
-  addMessage(speaker, message, conversationType, timestamp = null) {
+  addMessage(speaker, message, conversationType, timestamp = null, conversationId = null) {
     if (!this.chatContainer) return;
 
-    const messageElement = this.createMessageElement(speaker, message, conversationType, timestamp);
-    this.chatContainer.appendChild(messageElement);
+    // Generate conversation ID if not provided
+    if (!conversationId) {
+      conversationId = this.generateConversationId(speaker, conversationType, timestamp);
+    }
 
-    // Limit number of messages
+    // Hide empty state message when first message is added
+    if (this.emptyStateMessage && this.emptyStateMessage.parentNode) {
+      this.chatContainer.removeChild(this.emptyStateMessage);
+    }
+
+    // Get or create conversation group
+    let conversationGroup = this.conversationGroups.get(conversationId);
+    if (!conversationGroup) {
+      conversationGroup = this.createConversationGroup(conversationId, conversationType);
+      this.conversationGroups.set(conversationId, conversationGroup);
+      this.chatContainer.appendChild(conversationGroup.container);
+    }
+
+    // Add message to the group
+    const messageElement = this.createMessageElement(speaker, message, conversationType, timestamp);
+    conversationGroup.messagesContainer.appendChild(messageElement);
+    conversationGroup.messageCount++;
+
+    // Update conversation header with latest message info
+    this.updateConversationHeader(conversationGroup, speaker, timestamp);
+
+    // Update total message count
     this.messageCount++;
-    if (this.messageCount > this.maxMessages) {
-      const firstMessage = this.chatContainer.firstChild;
-      if (firstMessage) {
-        this.chatContainer.removeChild(firstMessage);
-        this.messageCount--;
-      }
+
+    // Limit number of conversations
+    if (this.messageCount > this.maxMessages || this.conversationGroups.size > this.maxConversations) {
+      this.cleanupOldConversations();
+    }
+
+    // Show empty state again if no conversations remain after cleanup
+    if (this.conversationGroups.size === 0 && this.emptyStateMessage && !this.emptyStateMessage.parentNode) {
+      this.chatContainer.appendChild(this.emptyStateMessage);
     }
 
     // Auto-scroll to bottom
@@ -127,10 +244,11 @@ export class ChatSidebar {
     messageDiv.style.cssText = `
       background: rgba(12, 16, 40, 0.6);
       border: 1px solid rgba(96, 112, 238, 0.2);
-      border-radius: 12px;
-      padding: 0.75rem;
+      border-radius: 8px;
+      padding: 0.6rem;
       transition: all 0.2s ease;
       animation: slideIn 0.3s ease-out;
+      margin-bottom: 0.25rem;
     `;
 
     // Add slide-in animation
@@ -158,7 +276,7 @@ export class ChatSidebar {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      margin-bottom: 0.5rem;
+      margin-bottom: 0.4rem;
     `;
 
     const speakerInfo = document.createElement('div');
@@ -187,12 +305,12 @@ export class ChatSidebar {
     conversationTypeTag.style.cssText = `
       background: ${this.getConversationTypeColor(conversationType)};
       color: #ffffff;
-      padding: 0.2rem 0.5rem;
-      border-radius: 6px;
-      font-size: 0.7rem;
+      padding: 0.15rem 0.4rem;
+      border-radius: 4px;
+      font-size: 0.65rem;
       font-weight: 500;
       text-transform: uppercase;
-      letter-spacing: 0.5px;
+      letter-spacing: 0.3px;
     `;
 
     speakerInfo.appendChild(speakerIcon);
@@ -298,6 +416,283 @@ export class ChatSidebar {
     if (this.chatContainer) {
       this.chatContainer.innerHTML = '';
       this.messageCount = 0;
+      this.conversationGroups.clear();
+      
+      // Show empty state message when all messages are cleared
+      if (this.emptyStateMessage) {
+        this.chatContainer.appendChild(this.emptyStateMessage);
+      }
+    }
+  }
+
+  /**
+   * Generate a conversation ID based on speaker and conversation type
+   * This is a fallback method when conversationId is not provided
+   */
+  generateConversationId(speaker, conversationType, timestamp) {
+    // Generate a simple ID based on conversation type and timestamp
+    // This should ideally be coordinated with the conversation service
+    const currentTime = timestamp || Date.now();
+    const timeKey = Math.floor(currentTime / 5000) * 5000; // Round to nearest 5 seconds
+    const speakerKey = `${speaker.isStudent ? 's' : 'r'}${speaker.id}`;
+    return `${conversationType}_${speakerKey}_${timeKey}`;
+  }
+
+  /**
+   * Add a complete conversation with multiple messages
+   */
+  addConversation(conversationId, conversationType, messages, participants = null) {
+    if (!this.chatContainer) return;
+
+    // Hide empty state message when first conversation is added
+    if (this.emptyStateMessage && this.emptyStateMessage.parentNode) {
+      this.chatContainer.removeChild(this.emptyStateMessage);
+    }
+
+    // Create conversation group with participant info if available
+    let conversationGroup;
+    if (participants && participants.length >= 2) {
+      conversationGroup = this.createConversationGroupWithParticipants(conversationId, conversationType, participants);
+    } else {
+      conversationGroup = this.createConversationGroup(conversationId, conversationType);
+    }
+    
+    this.conversationGroups.set(conversationId, conversationGroup);
+    this.chatContainer.appendChild(conversationGroup.container);
+
+    // Add all messages to the group
+    messages.forEach((messageData, index) => {
+      const messageElement = this.createMessageElement(
+        messageData.speaker, 
+        messageData.message, 
+        conversationType, 
+        messageData.timestamp
+      );
+      conversationGroup.messagesContainer.appendChild(messageElement);
+      conversationGroup.messageCount++;
+      this.messageCount++; // Update total message count
+    });
+
+    // Update header
+    conversationGroup.messageCountElement.textContent = `${conversationGroup.messageCount} message${conversationGroup.messageCount !== 1 ? 's' : ''}`;
+
+    // Update last activity
+    if (messages.length > 0) {
+      const lastMessage = messages[messages.length - 1];
+      conversationGroup.lastActivity = lastMessage.timestamp || Date.now();
+    }
+
+    // Limit conversations
+    if (this.conversationGroups.size > this.maxConversations) {
+      this.cleanupOldConversations();
+    }
+
+    // Auto-scroll to bottom
+    this.scrollToBottom();
+  }
+
+  /**
+   * Create a conversation group container
+   */
+  createConversationGroup(conversationId, conversationType) {
+    const container = document.createElement('div');
+    container.className = 'conversation-group';
+    container.style.cssText = `
+      border: 1px solid rgba(96, 112, 238, 0.2);
+      border-radius: 12px;
+      overflow: hidden;
+      background: rgba(8, 10, 24, 0.3);
+      transition: all 0.2s ease;
+      flex-shrink: 0;
+    `;
+
+    // Create collapsible header
+    const header = document.createElement('div');
+    header.className = 'conversation-header';
+    header.style.cssText = `
+      padding: 0.75rem;
+      background: rgba(96, 112, 238, 0.1);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      user-select: none;
+      transition: background 0.2s ease;
+    `;
+
+    // Header content
+    const headerContent = document.createElement('div');
+    headerContent.style.cssText = `
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    `;
+
+    // Conversation type icon
+    const typeIcon = document.createElement('span');
+    typeIcon.textContent = this.getConversationTypeIcon(conversationType);
+    typeIcon.style.cssText = `
+      font-size: 1.1rem;
+    `;
+
+    // Conversation title
+    const title = document.createElement('span');
+    title.textContent = this.getConversationTypeLabel(conversationType);
+    title.style.cssText = `
+      font-weight: 600;
+      color: #ffffff;
+      font-size: 0.9rem;
+    `;
+
+    // Message count
+    const messageCount = document.createElement('span');
+    messageCount.textContent = '0 messages';
+    messageCount.style.cssText = `
+      color: #8fa0ff;
+      font-size: 0.8rem;
+      margin-left: 0.5rem;
+    `;
+
+    headerContent.appendChild(typeIcon);
+    headerContent.appendChild(title);
+    headerContent.appendChild(messageCount);
+
+    // Collapse/expand button
+    const toggleButton = document.createElement('span');
+    toggleButton.textContent = '▼';
+    toggleButton.style.cssText = `
+      color: #8fa0ff;
+      font-size: 0.8rem;
+      transition: transform 0.2s ease;
+    `;
+
+    header.appendChild(headerContent);
+    header.appendChild(toggleButton);
+
+    // Messages container
+    const messagesContainer = document.createElement('div');
+    messagesContainer.className = 'conversation-messages';
+    messagesContainer.style.cssText = `
+      padding: 0.5rem;
+      display: none;
+      flex-direction: column;
+      gap: 0.5rem;
+    `;
+
+    // Assemble container
+    container.appendChild(header);
+    container.appendChild(messagesContainer);
+
+    // Add hover effects
+    header.addEventListener('mouseenter', () => {
+      header.style.background = 'rgba(96, 112, 238, 0.2)';
+    });
+
+    header.addEventListener('mouseleave', () => {
+      header.style.background = 'rgba(96, 112, 238, 0.1)';
+    });
+
+    // Add click handler for collapse/expand (start collapsed)
+    let isExpanded = false;
+    toggleButton.textContent = '▶';
+    
+    header.addEventListener('click', () => {
+      isExpanded = !isExpanded;
+      if (isExpanded) {
+        messagesContainer.style.display = 'flex';
+        toggleButton.textContent = '▼';
+        toggleButton.style.transform = 'rotate(0deg)';
+      } else {
+        messagesContainer.style.display = 'none';
+        toggleButton.textContent = '▶';
+        toggleButton.style.transform = 'rotate(0deg)';
+      }
+    });
+
+    return {
+      container,
+      header,
+      messagesContainer,
+      messageCount: 0,
+      messageCountElement: messageCount,
+      conversationId,
+      conversationType,
+      lastActivity: Date.now(),
+      isExpanded: false
+    };
+  }
+
+  /**
+   * Update conversation header with latest message info
+   */
+  updateConversationHeader(conversationGroup, speaker, timestamp) {
+    const currentTime = timestamp || Date.now();
+    const timeStr = this.formatTime(currentTime);
+    const speakerLabel = speaker.isStudent ? `Student ${speaker.id}` : `Recruiter ${speaker.id}`;
+    
+    // Update message count
+    conversationGroup.messageCountElement.textContent = `${conversationGroup.messageCount} message${conversationGroup.messageCount !== 1 ? 's' : ''}`;
+    
+    // Update last activity
+    conversationGroup.lastActivity = currentTime;
+  }
+
+  /**
+   * Create a conversation group with participant information
+   */
+  createConversationGroupWithParticipants(conversationId, conversationType, participants) {
+    const conversationGroup = this.createConversationGroup(conversationId, conversationType);
+    
+    // Update header with participant info
+    const title = conversationGroup.header.querySelector('span[style*="font-weight: 600"]');
+    if (title && participants && participants.length >= 2) {
+      const [agent1, agent2] = participants;
+      const agent1Label = agent1.isStudent ? `Student ${agent1.id}` : `Recruiter ${agent1.id}`;
+      const agent2Label = agent2.isStudent ? `Student ${agent2.id}` : `Recruiter ${agent2.id}`;
+      title.textContent = `${agent1Label} ↔ ${agent2Label}`;
+    }
+    
+    return conversationGroup;
+  }
+
+  /**
+   * Get conversation type icon
+   */
+  getConversationTypeIcon(conversationType) {
+    switch (conversationType) {
+      case 'student-student':
+        return '🎓';
+      case 'recruiter-recruiter':
+        return '💼';
+      case 'student-recruiter':
+        return '🤝';
+      default:
+        return '💬';
+    }
+  }
+
+  /**
+   * Clean up old conversations to prevent memory issues
+   */
+  cleanupOldConversations() {
+    if (this.conversationGroups.size <= this.maxConversations) return;
+
+    // Remove oldest conversations
+    const conversations = Array.from(this.conversationGroups.entries());
+    conversations.sort((a, b) => a[1].lastActivity - b[1].lastActivity);
+
+    const toRemove = conversations.slice(0, conversations.length - this.maxConversations);
+    toRemove.forEach(([conversationId, conversationGroup]) => {
+      if (conversationGroup.container.parentNode) {
+        conversationGroup.container.parentNode.removeChild(conversationGroup.container);
+      }
+      this.conversationGroups.delete(conversationId);
+      this.messageCount -= conversationGroup.messageCount;
+    });
+
+    // Show empty state if no conversations remain
+    if (this.conversationGroups.size === 0 && this.emptyStateMessage && !this.emptyStateMessage.parentNode) {
+      this.chatContainer.appendChild(this.emptyStateMessage);
     }
   }
 
@@ -327,6 +722,104 @@ export class ChatSidebar {
   }
 
   /**
+   * Toggle sidebar collapsed state
+   */
+  toggle() {
+    if (this.isCollapsed) {
+      this.expand();
+    } else {
+      this.collapse();
+    }
+  }
+
+  /**
+   * Collapse the sidebar
+   */
+  collapse() {
+    if (this.isCollapsed) return;
+
+    this.isCollapsed = true;
+    this.sidebar.style.width = this.collapsedWidth;
+    this.contentWrapper.style.opacity = '0';
+    this.toggleButton.innerHTML = '◀'; // Left arrow for expand - no text when collapsed
+    
+    // Center the button in the collapsed strip with high z-index to ensure clickability
+    this.toggleButton.style.position = 'absolute';
+    this.toggleButton.style.top = '15px';
+    this.toggleButton.style.left = '50%';
+    this.toggleButton.style.right = 'auto';
+    this.toggleButton.style.transform = 'translateX(-50%)';
+    this.toggleButton.style.width = '32px';
+    this.toggleButton.style.minWidth = '32px';
+    this.toggleButton.style.height = '32px';
+    this.toggleButton.style.borderRadius = '8px';
+    this.toggleButton.style.margin = '0';
+    this.toggleButton.style.padding = '0';
+    this.toggleButton.style.zIndex = '100';
+    this.toggleButton.style.pointerEvents = 'auto';
+    
+    // Update body margin
+    this.updateBodyMargin();
+
+    // Notify game grid of sidebar state change
+    if (this.gameGrid && this.gameGrid.handleSidebarToggle) {
+      this.gameGrid.handleSidebarToggle();
+    }
+  }
+
+  /**
+   * Expand the sidebar
+   */
+  expand() {
+    if (!this.isCollapsed) return;
+
+    this.isCollapsed = false;
+    this.sidebar.style.width = this.expandedWidth;
+    this.contentWrapper.style.opacity = '1';
+    this.toggleButton.innerHTML = '<span style="margin-right: 4px;">▶</span>Live Chat'; // Right arrow for collapse
+    
+    // Restore inline-like positioning (but still positioned for visibility)
+    this.toggleButton.style.position = 'static';
+    this.toggleButton.style.top = 'auto';
+    this.toggleButton.style.left = 'auto';
+    this.toggleButton.style.right = 'auto';
+    this.toggleButton.style.transform = 'none';
+    this.toggleButton.style.width = '95px';
+    this.toggleButton.style.minWidth = '95px';
+    this.toggleButton.style.height = '24px';
+    this.toggleButton.style.borderRadius = '4px';
+    this.toggleButton.style.margin = '0.5rem 0 0.75rem 1rem';
+    this.toggleButton.style.padding = '0 6px';
+    this.toggleButton.style.justifyContent = 'center';
+    this.toggleButton.style.flexShrink = '0';
+    this.toggleButton.style.zIndex = 'auto';
+    this.toggleButton.style.pointerEvents = 'auto';
+    
+    // Update body margin
+    this.updateBodyMargin();
+
+    // Notify game grid of sidebar state change
+    if (this.gameGrid && this.gameGrid.handleSidebarToggle) {
+      this.gameGrid.handleSidebarToggle();
+    }
+  }
+
+  /**
+   * Update body margin based on sidebar state
+   */
+  updateBodyMargin() {
+    const marginValue = this.isCollapsed ? '50px' : '350px';
+    document.body.style.marginRight = marginValue;
+  }
+
+  /**
+   * Check if sidebar is collapsed
+   */
+  isCollapsedState() {
+    return this.isCollapsed;
+  }
+
+  /**
    * Destroy the sidebar
    */
   destroy() {
@@ -339,6 +832,8 @@ export class ChatSidebar {
 
     this.sidebar = null;
     this.chatContainer = null;
+    this.toggleButton = null;
+    this.contentWrapper = null;
     this.isInitialized = false;
   }
 }

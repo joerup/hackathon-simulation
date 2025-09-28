@@ -39,33 +39,30 @@ export class ConversationService {
       const starterMessage = await this.generateMessage(starter, responder, context, true);
       console.log(`${starter.isStudent ? 'Student' : 'Recruiter'} ${starter.id}: "${starterMessage}"`);
       
-      // Add starter message to chat sidebar
-      if (this.chatSidebar) {
-        this.chatSidebar.addMessage(starter, starterMessage, conversationType, Date.now());
-      }
-      
       // Generate response message
       const responseMessage = await this.generateMessage(responder, starter, context, false, starterMessage);
       console.log(`${responder.isStudent ? 'Student' : 'Recruiter'} ${responder.id}: "${responseMessage}"`);
       
-      // Add response message to chat sidebar
-      if (this.chatSidebar) {
-        this.chatSidebar.addMessage(responder, responseMessage, conversationType, Date.now());
-      }
-      
       // Store conversation data
-      this.activeConversations.set(conversationId, {
+      const conversationData = {
         id: conversationId,
         participants: [agent1.id, agent2.id],
         starter: starter.id,
         responder: responder.id,
         conversationType: conversationType,
         messages: [
-          { speaker: starter.id, message: starterMessage, timestamp: Date.now() },
-          { speaker: responder.id, message: responseMessage, timestamp: Date.now() }
+          { speaker: starter, message: starterMessage, timestamp: Date.now() },
+          { speaker: responder, message: responseMessage, timestamp: Date.now() }
         ],
         isComplete: true
-      });
+      };
+
+      this.activeConversations.set(conversationId, conversationData);
+      
+      // Add complete conversation to chat sidebar
+      if (this.chatSidebar) {
+        this.chatSidebar.addConversation(conversationId, conversationType, conversationData.messages, [agent1, agent2]);
+      }
       
     } catch (error) {
       console.error('Error in conversation service:', error);
@@ -378,24 +375,26 @@ Be professional, friendly, and interested in learning about the student's backgr
     console.log(`${starter.isStudent ? 'Student' : 'Recruiter'} ${starter.id}: "${starterMessage}"`);
     console.log(`${responder.isStudent ? 'Student' : 'Recruiter'} ${responder.id}: "${responseMessage}"`);
     
-    // Add messages to chat sidebar
-    if (this.chatSidebar) {
-      this.chatSidebar.addMessage(starter, starterMessage, conversationType, Date.now());
-      this.chatSidebar.addMessage(responder, responseMessage, conversationType, Date.now());
-    }
-    
-    this.activeConversations.set(conversationId, {
+    // Store conversation data
+    const conversationData = {
       id: conversationId,
       participants: [agent1.id, agent2.id],
       starter: starter.id,
       responder: responder.id,
       conversationType: conversationType,
       messages: [
-        { speaker: starter.id, message: starterMessage, timestamp: Date.now() },
-        { speaker: responder.id, message: responseMessage, timestamp: Date.now() }
+        { speaker: starter, message: starterMessage, timestamp: Date.now() },
+        { speaker: responder, message: responseMessage, timestamp: Date.now() }
       ],
       isComplete: true
-    });
+    };
+
+    this.activeConversations.set(conversationId, conversationData);
+    
+    // Add complete conversation to chat sidebar
+    if (this.chatSidebar) {
+      this.chatSidebar.addConversation(conversationId, conversationType, conversationData.messages, [agent1, agent2]);
+    }
   }
 
   /**
