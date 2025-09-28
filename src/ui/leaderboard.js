@@ -40,7 +40,7 @@ export class LeaderboardModal {
     const title = this.createElement('h2', `margin:0 0 1.5rem 0;font-size:1.8rem;font-weight:600;color:${S.primary};text-align:center`, '🏆 Student Leaderboard');
     
     // Get students data
-    const students = this.getStudents();
+    const students = this.getStudentData();
     
     // Stats section
     const statsContainer = this.createElement('div', `background:${S.highlight};border-radius:12px;padding:1rem;margin-bottom:1.5rem;display:flex;gap:1rem;justify-content:space-between`);
@@ -397,7 +397,7 @@ export class LeaderboardModal {
     this.content.innerHTML = '';
     
     const title = this.createElement('h2', `margin:0 0 1.5rem 0;font-size:1.8rem;font-weight:600;color:${S.primary};text-align:center`, '🏆 Student Leaderboard');
-    const students = this.getStudents();
+    const students = this.getStudentData();
     
     const statsContainer = this.createElement('div', `background:${S.highlight};border-radius:12px;padding:1rem;margin-bottom:1.5rem;display:flex;gap:1rem;justify-content:space-between`);
     const totals = {

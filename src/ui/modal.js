@@ -152,6 +152,13 @@ export class Modal {
     this.statusMessage.textContent = '';
   }
 
+  setStatus(message, color = S.secondary) {
+    if (this.statusMessage) {
+      this.statusMessage.textContent = message;
+      this.statusMessage.style.color = color;
+    }
+  }
+
   async analyze() {
     if ((!this.file && !this.selectedSampleFile) || this.isProcessing) return;
 
@@ -185,7 +192,7 @@ export class Modal {
         return;
       }
 
-      if (this.createStudent(stats)) {
+      if (this.createStudentFromResume(stats)) {
         if (this.gameGrid.sidebar) this.gameGrid.sidebar.refresh();
         this.close();
       } else {
@@ -287,7 +294,7 @@ export class Modal {
         fillerRatio: typeof stats?.fillerRatio === 'number' ? stats.fillerRatio : 0
       };
 
-      const agent = this.gameGrid.addAgent(emptyPosition.x, emptyPosition.y, null, true, {
+      const agent = this.gameGrid.addAgent(pos.x, pos.y, null, true, {
         stats: studentStats,
         resumeData: stats
       });
