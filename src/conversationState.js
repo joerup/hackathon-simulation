@@ -11,6 +11,15 @@ export class ConversationState {
     this.agentConversations = new Map(); // Map<agentId, conversationId>
     this.agents = agents; // Reference to agents array for state updates
     this.conversationService = new ConversationService();
+    this.chatSidebar = null; // Reference to chat sidebar
+  }
+
+  /**
+   * Set the chat sidebar reference
+   */
+  setChatSidebar(chatSidebar) {
+    this.chatSidebar = chatSidebar;
+    this.conversationService.setChatSidebar(chatSidebar);
   }
 
   /**

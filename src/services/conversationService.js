@@ -6,6 +6,14 @@ import { snapdragonConfig } from "../config.js";
 export class ConversationService {
   constructor() {
     this.activeConversations = new Map(); // Map<conversationId, conversationData>
+    this.chatSidebar = null; // Reference to chat sidebar for displaying messages
+  }
+
+  /**
+   * Set the chat sidebar reference
+   */
+  setChatSidebar(chatSidebar) {
+    this.chatSidebar = chatSidebar;
   }
 
   /**
@@ -31,9 +39,19 @@ export class ConversationService {
       const starterMessage = await this.generateMessage(starter, responder, context, true);
       console.log(`${starter.isStudent ? 'Student' : 'Recruiter'} ${starter.id}: "${starterMessage}"`);
       
+      // Add starter message to chat sidebar
+      if (this.chatSidebar) {
+        this.chatSidebar.addMessage(starter, starterMessage, conversationType, Date.now());
+      }
+      
       // Generate response message
       const responseMessage = await this.generateMessage(responder, starter, context, false, starterMessage);
       console.log(`${responder.isStudent ? 'Student' : 'Recruiter'} ${responder.id}: "${responseMessage}"`);
+      
+      // Add response message to chat sidebar
+      if (this.chatSidebar) {
+        this.chatSidebar.addMessage(responder, responseMessage, conversationType, Date.now());
+      }
       
       // Store conversation data
       this.activeConversations.set(conversationId, {
@@ -359,6 +377,12 @@ Be professional, friendly, and interested in learning about the student's backgr
     
     console.log(`${starter.isStudent ? 'Student' : 'Recruiter'} ${starter.id}: "${starterMessage}"`);
     console.log(`${responder.isStudent ? 'Student' : 'Recruiter'} ${responder.id}: "${responseMessage}"`);
+    
+    // Add messages to chat sidebar
+    if (this.chatSidebar) {
+      this.chatSidebar.addMessage(starter, starterMessage, conversationType, Date.now());
+      this.chatSidebar.addMessage(responder, responseMessage, conversationType, Date.now());
+    }
     
     this.activeConversations.set(conversationId, {
       id: conversationId,

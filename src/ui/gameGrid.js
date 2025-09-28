@@ -11,9 +11,18 @@ export class GameGrid {
     this.renderer = new GridRenderer(this.gameState);
     this.animationId = null;
     this.isRunning = false;
+    this.chatSidebar = null; // Reference to chat sidebar
     
     // Initialize the game with sample data
     this.initializeGame();
+  }
+
+  /**
+   * Set the chat sidebar reference
+   */
+  setChatSidebar(chatSidebar) {
+    this.chatSidebar = chatSidebar;
+    this.gameState.setChatSidebar(chatSidebar);
   }
 
   /**

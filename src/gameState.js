@@ -12,6 +12,15 @@ export class GameState {
     this.frameCount = 0;
     this.nextAgentId = 1; // Start agent IDs from 1
     this.conversationState = new ConversationState(this.agents);
+    this.chatSidebar = null; // Reference to chat sidebar
+  }
+
+  /**
+   * Set the chat sidebar reference
+   */
+  setChatSidebar(chatSidebar) {
+    this.chatSidebar = chatSidebar;
+    this.conversationState.setChatSidebar(chatSidebar);
   }
 
   /**
