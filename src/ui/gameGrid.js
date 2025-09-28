@@ -102,6 +102,19 @@ export class GameGrid {
   }
 
   /**
+   * Handle sidebar state changes (called when sidebars are toggled)
+   */
+  handleSidebarToggle() {
+    // Trigger grid resize to recalculate available space
+    if (this.renderer) {
+      // Small delay to allow CSS transitions to complete
+      setTimeout(() => {
+        this.renderer.resizeGrid();
+      }, 300);
+    }
+  }
+
+  /**
    * Get the current game state
    */
   getGameState() {

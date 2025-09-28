@@ -6,7 +6,13 @@ export class ChatSidebar {
     this.gameGrid = gameGrid;
     this.sidebar = null;
     this.chatContainer = null;
+    this.toggleButton = null;
+    this.contentWrapper = null;
+    this.emptyStateMessage = null;
     this.isInitialized = false;
+    this.isCollapsed = false;
+    this.expandedWidth = '350px';
+    this.collapsedWidth = '50px';
     this.messageCount = 0;
     this.maxMessages = 100; // Limit messages to prevent memory issues
     this.conversationGroups = new Map(); // Map<conversationId, conversationGroup>
@@ -25,46 +31,84 @@ export class ChatSidebar {
       position: fixed;
       top: 60px;
       right: 0;
-      width: 350px;
+      width: ${this.expandedWidth};
       height: calc(100vh - 60px);
       background: rgba(8, 10, 24, 0.95);
       border-left: 1px solid rgba(255, 255, 255, 0.1);
       backdrop-filter: blur(20px);
       z-index: 50;
-      overflow-y: auto;
-      padding: 1.5rem;
+      overflow: visible;
       box-shadow: -2px 0 20px rgba(0, 0, 0, 0.3);
       display: flex;
       flex-direction: column;
+      transition: width 0.3s ease, padding 0.3s ease;
     `;
 
-    // Header
-    const header = document.createElement('div');
-    header.style.cssText = `
-      margin-bottom: 1rem;
-      padding-bottom: 1rem;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    `;
-
-    const title = document.createElement('h3');
-    title.textContent = 'Live Chat';
-    title.style.cssText = `
-      margin: 0;
-      color: #ffffff;
-      font-size: 1.2rem;
-      font-weight: 600;
-    `;
-
-    const subtitle = document.createElement('p');
-    subtitle.textContent = 'Real-time conversations';
-    subtitle.style.cssText = `
-      margin: 0.25rem 0 0 0;
+    // Toggle button - positioned to look inline when expanded, centered when collapsed
+    this.toggleButton = document.createElement('button');
+    this.toggleButton.className = 'sidebar-toggle';
+    this.toggleButton.innerHTML = '<span style="margin-right: 4px;">▶</span>Live Chat'; // Arrow + header text
+    this.toggleButton.style.cssText = `
+      width: 95px;
+      height: 24px;
+      border: none;
+      border-radius: 4px;
+      background: rgba(96, 112, 238, 0.3);
       color: #8fa0ff;
-      font-size: 0.85rem;
+      cursor: pointer;
+      font-size: 11px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s ease;
+      margin: 0.5rem 0 0.75rem 1rem;
+      padding: 0 6px;
+      font-weight: 500;
+      white-space: nowrap;
+      flex-shrink: 0;
     `;
 
-    header.appendChild(title);
-    header.appendChild(subtitle);
+    this.toggleButton.addEventListener('mouseenter', () => {
+      this.toggleButton.style.background = 'rgba(96, 112, 238, 0.5)';
+      this.toggleButton.style.color = '#ffffff';
+      // Preserve existing transform and add scale
+      const currentTransform = this.toggleButton.style.transform;
+      if (currentTransform.includes('translateX')) {
+        this.toggleButton.style.transform = 'translateX(-50%) scale(1.1)';
+      } else {
+        this.toggleButton.style.transform = 'scale(1.1)';
+      }
+    });
+
+    this.toggleButton.addEventListener('mouseleave', () => {
+      this.toggleButton.style.background = 'rgba(96, 112, 238, 0.3)';
+      this.toggleButton.style.color = '#8fa0ff';
+      // Preserve existing transform and remove scale
+      const currentTransform = this.toggleButton.style.transform;
+      if (currentTransform.includes('translateX')) {
+        this.toggleButton.style.transform = 'translateX(-50%)';
+      } else {
+        this.toggleButton.style.transform = 'none';
+      }
+    });
+
+    this.toggleButton.addEventListener('click', () => {
+      this.toggle();
+    });
+
+    // Content wrapper for padding control
+    this.contentWrapper = document.createElement('div');
+    this.contentWrapper.className = 'sidebar-content';
+    this.contentWrapper.style.cssText = `
+      padding: 0.5rem 1.5rem 1.5rem;
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: visible;
+      display: flex;
+      flex-direction: column;
+      transition: opacity 0.2s ease;
+    `;
+
 
     // Chat container
     this.chatContainer = document.createElement('div');
@@ -85,8 +129,8 @@ export class ChatSidebar {
     this.chatContainer.style.scrollbarColor = 'rgba(96, 112, 238, 0.3) transparent';
 
     // Add webkit scrollbar styling for the main chat container
-    const mainScrollbarStyle = document.createElement('style');
     if (!document.querySelector('#main-chat-scrollbar-styles')) {
+      const mainScrollbarStyle = document.createElement('style');
       mainScrollbarStyle.id = 'main-chat-scrollbar-styles';
       mainScrollbarStyle.textContent = `
         .chat-messages::-webkit-scrollbar {
@@ -107,15 +151,35 @@ export class ChatSidebar {
       document.head.appendChild(mainScrollbarStyle);
     }
 
-    // Assemble sidebar
-    this.sidebar.appendChild(header);
-    this.sidebar.appendChild(this.chatContainer);
+    // Empty state placeholder
+    this.emptyStateMessage = document.createElement('div');
+    this.emptyStateMessage.className = 'empty-state-message';
+    this.emptyStateMessage.textContent = 'No live messages yet...';
+    this.emptyStateMessage.style.cssText = `
+      color: rgba(255, 255, 255, 0.5);
+      font-size: 0.9rem;
+      font-style: italic;
+      text-align: center;
+      padding: 2rem 1rem;
+      align-self: center;
+      margin: auto 0;
+    `;
+    
+    // Initially show empty state
+    this.chatContainer.appendChild(this.emptyStateMessage);
+
+    // Assemble content wrapper - header and chat only
+    this.contentWrapper.appendChild(this.chatContainer);
+
+    // Assemble sidebar - button stays outside content wrapper but positioned inline when expanded
+    this.sidebar.appendChild(this.toggleButton);
+    this.sidebar.appendChild(this.contentWrapper);
 
     // Add to page
     document.body.appendChild(this.sidebar);
 
     // Add right margin to body to account for sidebar
-    document.body.style.marginRight = '350px';
+    this.updateBodyMargin();
 
     this.isInitialized = true;
 
@@ -131,6 +195,11 @@ export class ChatSidebar {
     // Generate conversation ID if not provided
     if (!conversationId) {
       conversationId = this.generateConversationId(speaker, conversationType, timestamp);
+    }
+
+    // Hide empty state message when first message is added
+    if (this.emptyStateMessage && this.emptyStateMessage.parentNode) {
+      this.chatContainer.removeChild(this.emptyStateMessage);
     }
 
     // Get or create conversation group
@@ -149,10 +218,17 @@ export class ChatSidebar {
     // Update conversation header with latest message info
     this.updateConversationHeader(conversationGroup, speaker, timestamp);
 
-    // Limit number of conversations
+    // Update total message count
     this.messageCount++;
+
+    // Limit number of conversations
     if (this.messageCount > this.maxMessages || this.conversationGroups.size > this.maxConversations) {
       this.cleanupOldConversations();
+    }
+
+    // Show empty state again if no conversations remain after cleanup
+    if (this.conversationGroups.size === 0 && this.emptyStateMessage && !this.emptyStateMessage.parentNode) {
+      this.chatContainer.appendChild(this.emptyStateMessage);
     }
 
     // Auto-scroll to bottom
@@ -341,6 +417,11 @@ export class ChatSidebar {
       this.chatContainer.innerHTML = '';
       this.messageCount = 0;
       this.conversationGroups.clear();
+      
+      // Show empty state message when all messages are cleared
+      if (this.emptyStateMessage) {
+        this.chatContainer.appendChild(this.emptyStateMessage);
+      }
     }
   }
 
@@ -351,7 +432,8 @@ export class ChatSidebar {
   generateConversationId(speaker, conversationType, timestamp) {
     // Generate a simple ID based on conversation type and timestamp
     // This should ideally be coordinated with the conversation service
-    const timeKey = Math.floor(timestamp / 5000) * 5000; // Round to nearest 5 seconds
+    const currentTime = timestamp || Date.now();
+    const timeKey = Math.floor(currentTime / 5000) * 5000; // Round to nearest 5 seconds
     const speakerKey = `${speaker.isStudent ? 's' : 'r'}${speaker.id}`;
     return `${conversationType}_${speakerKey}_${timeKey}`;
   }
@@ -361,6 +443,11 @@ export class ChatSidebar {
    */
   addConversation(conversationId, conversationType, messages, participants = null) {
     if (!this.chatContainer) return;
+
+    // Hide empty state message when first conversation is added
+    if (this.emptyStateMessage && this.emptyStateMessage.parentNode) {
+      this.chatContainer.removeChild(this.emptyStateMessage);
+    }
 
     // Create conversation group with participant info if available
     let conversationGroup;
@@ -383,10 +470,17 @@ export class ChatSidebar {
       );
       conversationGroup.messagesContainer.appendChild(messageElement);
       conversationGroup.messageCount++;
+      this.messageCount++; // Update total message count
     });
 
     // Update header
     conversationGroup.messageCountElement.textContent = `${conversationGroup.messageCount} message${conversationGroup.messageCount !== 1 ? 's' : ''}`;
+
+    // Update last activity
+    if (messages.length > 0) {
+      const lastMessage = messages[messages.length - 1];
+      conversationGroup.lastActivity = lastMessage.timestamp || Date.now();
+    }
 
     // Limit conversations
     if (this.conversationGroups.size > this.maxConversations) {
@@ -532,14 +626,15 @@ export class ChatSidebar {
    * Update conversation header with latest message info
    */
   updateConversationHeader(conversationGroup, speaker, timestamp) {
-    const timeStr = this.formatTime(timestamp);
+    const currentTime = timestamp || Date.now();
+    const timeStr = this.formatTime(currentTime);
     const speakerLabel = speaker.isStudent ? `Student ${speaker.id}` : `Recruiter ${speaker.id}`;
     
     // Update message count
     conversationGroup.messageCountElement.textContent = `${conversationGroup.messageCount} message${conversationGroup.messageCount !== 1 ? 's' : ''}`;
     
     // Update last activity
-    conversationGroup.lastActivity = timestamp;
+    conversationGroup.lastActivity = currentTime;
   }
 
   /**
@@ -594,6 +689,11 @@ export class ChatSidebar {
       this.conversationGroups.delete(conversationId);
       this.messageCount -= conversationGroup.messageCount;
     });
+
+    // Show empty state if no conversations remain
+    if (this.conversationGroups.size === 0 && this.emptyStateMessage && !this.emptyStateMessage.parentNode) {
+      this.chatContainer.appendChild(this.emptyStateMessage);
+    }
   }
 
   /**
@@ -622,6 +722,104 @@ export class ChatSidebar {
   }
 
   /**
+   * Toggle sidebar collapsed state
+   */
+  toggle() {
+    if (this.isCollapsed) {
+      this.expand();
+    } else {
+      this.collapse();
+    }
+  }
+
+  /**
+   * Collapse the sidebar
+   */
+  collapse() {
+    if (this.isCollapsed) return;
+
+    this.isCollapsed = true;
+    this.sidebar.style.width = this.collapsedWidth;
+    this.contentWrapper.style.opacity = '0';
+    this.toggleButton.innerHTML = '◀'; // Left arrow for expand - no text when collapsed
+    
+    // Center the button in the collapsed strip with high z-index to ensure clickability
+    this.toggleButton.style.position = 'absolute';
+    this.toggleButton.style.top = '15px';
+    this.toggleButton.style.left = '50%';
+    this.toggleButton.style.right = 'auto';
+    this.toggleButton.style.transform = 'translateX(-50%)';
+    this.toggleButton.style.width = '32px';
+    this.toggleButton.style.minWidth = '32px';
+    this.toggleButton.style.height = '32px';
+    this.toggleButton.style.borderRadius = '8px';
+    this.toggleButton.style.margin = '0';
+    this.toggleButton.style.padding = '0';
+    this.toggleButton.style.zIndex = '100';
+    this.toggleButton.style.pointerEvents = 'auto';
+    
+    // Update body margin
+    this.updateBodyMargin();
+
+    // Notify game grid of sidebar state change
+    if (this.gameGrid && this.gameGrid.handleSidebarToggle) {
+      this.gameGrid.handleSidebarToggle();
+    }
+  }
+
+  /**
+   * Expand the sidebar
+   */
+  expand() {
+    if (!this.isCollapsed) return;
+
+    this.isCollapsed = false;
+    this.sidebar.style.width = this.expandedWidth;
+    this.contentWrapper.style.opacity = '1';
+    this.toggleButton.innerHTML = '<span style="margin-right: 4px;">▶</span>Live Chat'; // Right arrow for collapse
+    
+    // Restore inline-like positioning (but still positioned for visibility)
+    this.toggleButton.style.position = 'static';
+    this.toggleButton.style.top = 'auto';
+    this.toggleButton.style.left = 'auto';
+    this.toggleButton.style.right = 'auto';
+    this.toggleButton.style.transform = 'none';
+    this.toggleButton.style.width = '95px';
+    this.toggleButton.style.minWidth = '95px';
+    this.toggleButton.style.height = '24px';
+    this.toggleButton.style.borderRadius = '4px';
+    this.toggleButton.style.margin = '0.5rem 0 0.75rem 1rem';
+    this.toggleButton.style.padding = '0 6px';
+    this.toggleButton.style.justifyContent = 'center';
+    this.toggleButton.style.flexShrink = '0';
+    this.toggleButton.style.zIndex = 'auto';
+    this.toggleButton.style.pointerEvents = 'auto';
+    
+    // Update body margin
+    this.updateBodyMargin();
+
+    // Notify game grid of sidebar state change
+    if (this.gameGrid && this.gameGrid.handleSidebarToggle) {
+      this.gameGrid.handleSidebarToggle();
+    }
+  }
+
+  /**
+   * Update body margin based on sidebar state
+   */
+  updateBodyMargin() {
+    const marginValue = this.isCollapsed ? '50px' : '350px';
+    document.body.style.marginRight = marginValue;
+  }
+
+  /**
+   * Check if sidebar is collapsed
+   */
+  isCollapsedState() {
+    return this.isCollapsed;
+  }
+
+  /**
    * Destroy the sidebar
    */
   destroy() {
@@ -634,6 +832,8 @@ export class ChatSidebar {
 
     this.sidebar = null;
     this.chatContainer = null;
+    this.toggleButton = null;
+    this.contentWrapper = null;
     this.isInitialized = false;
   }
 }
