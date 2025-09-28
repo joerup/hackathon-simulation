@@ -12,15 +12,14 @@ export function createHeader(gameGrid = null) {
     left: 0;
     right: 0;
     height: 60px;
-    background: rgba(8, 10, 24, 0.95);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(253, 250, 245, 0.95);
+    border-bottom: 2px solid rgba(139, 113, 85, 0.4);
     backdrop-filter: blur(20px);
     z-index: 100;
     display: flex;
     align-items: center;
     justify-content: space-between;
     padding: 0 2rem;
-    box-shadow: 0 2px 20px rgba(0, 0, 0, 0.3);
   `;
 
   // Create title with logo
@@ -53,7 +52,7 @@ export function createHeader(gameGrid = null) {
     margin: 0;
     font-size: 1.8rem;
     font-weight: 700;
-    color: #ffffff;
+    color: #3d2f1f;
     letter-spacing: -0.02em;
   `;
 
@@ -64,26 +63,24 @@ export function createHeader(gameGrid = null) {
   const addStudentButton = document.createElement('button');
   addStudentButton.textContent = 'Add Student';
   addStudentButton.style.cssText = `
-    background: linear-gradient(140deg, #7088ff, #9d66ff);
-    color: #11152c;
+    background: linear-gradient(140deg, #d4a574, #c1955f);
+    color: #3d2f1f;
     border: none;
     border-radius: 8px;
     padding: 0.6rem 1.2rem;
     font-weight: 600;
     font-size: 0.9rem;
     cursor: pointer;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    transition: transform 0.2s ease;
     margin: 0;
   `;
 
   addStudentButton.addEventListener('mouseenter', () => {
     addStudentButton.style.transform = 'translateY(-1px)';
-    addStudentButton.style.boxShadow = '0 8px 25px rgba(112, 136, 255, 0.4)';
   });
 
   addStudentButton.addEventListener('mouseleave', () => {
     addStudentButton.style.transform = 'translateY(0)';
-    addStudentButton.style.boxShadow = 'none';
   });
 
   addStudentButton.addEventListener('click', () => {

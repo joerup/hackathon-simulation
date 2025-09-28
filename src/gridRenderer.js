@@ -24,10 +24,10 @@ export class GridRenderer {
     this.gridElement.style.display = 'grid';
     this.gridElement.style.gridTemplateColumns = `repeat(${this.gameState.size}, 1fr)`;
     this.gridElement.style.gap = '2px';
-    this.gridElement.style.background = 'rgba(15, 20, 45, 0.8)';
+    this.gridElement.style.background = 'linear-gradient(135deg, #DEB887, #F4A460, #D2B48C)';
     this.gridElement.style.padding = '10px';
     this.gridElement.style.borderRadius = '8px';
-    this.gridElement.style.border = '1px solid rgba(96, 112, 238, 0.3)';
+    this.gridElement.style.border = '1px solid rgba(139, 113, 85, 0.3)';
 
     this.createGridCells();
     this.container.appendChild(this.gridElement);
@@ -53,7 +53,7 @@ export class GridRenderer {
         cell.className = 'grid-cell';
         cell.style.width = `${cellSize}px`;
         cell.style.height = `${cellSize}px`;
-        cell.style.border = '1px solid rgba(255, 255, 255, 0.1)';
+        cell.style.border = '1px solid rgba(160, 120, 80, 0.4)';
         cell.style.display = 'flex';
         cell.style.alignItems = 'center';
         cell.style.justifyContent = 'center';
@@ -185,12 +185,51 @@ export class GridRenderer {
   }
 
   /**
-   * Render an obstacle cell
+   * Render an obstacle cell with a potted plant
    */
   renderObstacleCell(cell, cellData) {
-    cell.style.backgroundColor = 'rgba(255, 100, 100, 0.8)';
-    cell.textContent = '█';
-    cell.style.color = '#fff';
+    cell.style.backgroundColor = 'rgba(222, 184, 135, 0.4)'; // Same as walkable cells
+    cell.innerHTML = '';
+
+    // Create a simple potted plant sprite
+    const plant = document.createElement('div');
+    plant.style.cssText = `
+      position: relative;
+      width: 80%;
+      height: 80%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-end;
+    `;
+
+    // Pot
+    const pot = document.createElement('div');
+    pot.style.cssText = `
+      width: 60%;
+      height: 40%;
+      background: linear-gradient(145deg, #CD853F, #D2691E);
+      border-radius: 0 0 50% 50%;
+      border: 1px solid #A0522D;
+      position: relative;
+    `;
+
+    // Plant leaves
+    const leaves = document.createElement('div');
+    leaves.style.cssText = `
+      position: absolute;
+      bottom: 35%;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: ${Math.max(8, cell.offsetWidth * 0.4)}px;
+      color: #228B22;
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+    `;
+    leaves.textContent = '🌿';
+
+    plant.appendChild(pot);
+    plant.appendChild(leaves);
+    cell.appendChild(plant);
   }
 
   /**
@@ -206,12 +245,12 @@ export class GridRenderer {
     const isStudent = Boolean(agent.isStudent);
     const inConversation = Boolean(agent.inConversation);
 
-    const baseBackground = isStudent ? 'rgba(255, 255, 255, 0.08)' : 'rgba(169, 196, 255, 0.12)';
-    const convoBackground = isStudent ? 'rgba(255, 236, 170, 0.55)' : 'rgba(220, 205, 255, 0.5)';
-    const baseBorder = isStudent ? '1px solid rgba(255, 255, 255, 0.18)' : '1px solid rgba(170, 195, 255, 0.25)';
+    const baseBackground = isStudent ? 'rgba(245, 222, 179, 0.8)' : 'rgba(222, 184, 135, 0.8)';
+    const convoBackground = isStudent ? 'rgba(255, 236, 170, 0.9)' : 'rgba(240, 230, 140, 0.9)';
+    const baseBorder = isStudent ? '1px solid rgba(160, 120, 80, 0.6)' : '1px solid rgba(205, 133, 63, 0.7)';
 
     cell.style.backgroundColor = inConversation ? convoBackground : baseBackground;
-    cell.style.border = inConversation ? '2px solid rgba(255, 255, 255, 0.85)' : baseBorder;
+    cell.style.border = inConversation ? '2px solid rgba(184, 134, 11, 0.9)' : baseBorder;
     cell.style.boxShadow = inConversation ? '0 0 12px rgba(255, 245, 200, 0.75)' : '0 1px 3px rgba(0, 0, 0, 0.3)';
     cell.style.color = '';
     cell.style.padding = '2px';
@@ -323,7 +362,7 @@ export class GridRenderer {
    * Render a walkable cell
    */
   renderWalkableCell(cell) {
-    cell.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
+    cell.style.backgroundColor = 'rgba(222, 184, 135, 0.4)';
   }
 
 
