@@ -83,6 +83,12 @@ See [`src/services/conversationService.js`](src/services/conversationService.js)
 
 ---
 
+## Creators
+- Hao Teng (hteng@princeton.edu)
+- Joseph Rupertus (joerup@princeton.edu)
+- Christina Nikolova (cn8979@princeton.edu)
+- Jorrel Rajan (jorrel@princeton.edu)
+
 ## License
 
 This project is licensed under the **GNU General Public License (GPL) 3.0**.
