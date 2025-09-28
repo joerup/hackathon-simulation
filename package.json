@@ -12,6 +12,7 @@
   "author": "",
   "license": "GPL-3.0",
   "devDependencies": {
+    "@electron/packager": "^18.4.4",
     "electron": "^38.1.2"
   },
   "dependencies": {
