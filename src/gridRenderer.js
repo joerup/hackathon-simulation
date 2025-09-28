@@ -328,7 +328,17 @@ export class GridRenderer {
 
     const label = document.createElement('div');
     label.className = 'agent-label';
-    label.textContent = `${agent.isStudent ? 'S' : 'R'}${agent.id}`;
+
+    const rawName = [agent.displayName, agent.stats?.name]
+      .map(value => (typeof value === 'string' ? value.trim() : ''))
+      .find(value => value.length);
+    if (rawName) {
+      const firstName = rawName.split(/\s+/)[0];
+      label.textContent = firstName.length > 8 ? `${firstName.slice(0, 7)}…` : firstName;
+    } else {
+      label.textContent = `${agent.isStudent ? 'S' : 'R'}${agent.id}`;
+    }
+
     avatar.appendChild(label);
 
     return avatar;

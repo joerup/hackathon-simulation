@@ -559,6 +559,7 @@ export class Modal {
   /**
    * Create student from resume stats
    */
+
   createStudentFromResume(stats) {
     try {
       const gameState = this.gameGrid.getGameState();
@@ -579,39 +580,75 @@ export class Modal {
 
       if (!emptyPosition) return false;
 
-      // Create student stats
-      let skills = ['JavaScript'];
-      if (stats.skills && Array.isArray(stats.skills)) {
-        skills = stats.skills
-          .filter(skill => skill && (skill.label || skill.name))
-          .map(skill => skill.label || skill.name)
-          .slice(0, 4);
+      const normalizedSkillDetails = Array.isArray(stats?.skills)
+        ? stats.skills
+            .map(skill => {
+              if (!skill) return null;
+              if (typeof skill === 'string') {
+                return { label: skill, score: 0 };
+              }
+              if (typeof skill === 'object') {
+                const label = typeof skill.label === 'string'
+                  ? skill.label
+                  : typeof skill.name === 'string'
+                  ? skill.name
+                  : '';
+                if (!label) return null;
+                const score = typeof skill.score === 'number' && Number.isFinite(skill.score)
+                  ? skill.score
+                  : typeof skill.count === 'number' && Number.isFinite(skill.count)
+                  ? skill.count
+                  : 0;
+                return { label, score };
+              }
+              return null;
+            })
+            .filter(Boolean)
+        : [];
+
+      const skillNames = normalizedSkillDetails.length
+        ? normalizedSkillDetails.slice(0, 6).map(skill => skill.label)
+        : [];
+
+      if (skillNames.length === 0) {
+        skillNames.push('JavaScript');
       }
 
-      if (skills.length === 0) skills = ['JavaScript'];
+      const gpaValue = (() => {
+        if (typeof stats?.gpa === 'number' && Number.isFinite(stats.gpa)) {
+          return Number(stats.gpa.toFixed ? stats.gpa : stats.gpa);
+        }
+        if (typeof stats?.gpa === 'string' && stats.gpa.trim()) {
+          const parsed = Number(stats.gpa.trim());
+          return Number.isFinite(parsed) ? parsed : stats.gpa.trim();
+        }
+        return 3.0;
+      })();
+
+      const nameValue = typeof stats?.name === 'string' ? stats.name.trim() : '';
 
       const studentStats = {
-        gpa: stats.gpa || 3.0,
-        skills: skills,
-        experience: stats.experience || 0,
-        major: stats.major || 'Computer Science',
-        networking: stats.networking || 0,
-        energyScore: stats.energyScore || 50,
-        luck: stats.luck || 50,
-        internships: stats.internships || 0,
-        buzzwords: stats.buzzwords || [],
-        summary: stats.summary || '',
-        fillerRatio: stats.fillerRatio || 0
+        name: nameValue,
+        gpa: gpaValue,
+        skills: skillNames,
+        skillsDetailed: normalizedSkillDetails,
+        experience: stats?.experience || 0,
+        major: stats?.major || 'Computer Science',
+        networking: stats?.networking || 0,
+        energyScore: stats?.energyScore || 50,
+        luck: stats?.luck || 50,
+        internships: stats?.internships || 0,
+        buzzwords: Array.isArray(stats?.buzzwords) ? stats.buzzwords : [],
+        summary: typeof stats?.summary === 'string' ? stats.summary : '',
+        fillerRatio: typeof stats?.fillerRatio === 'number' ? stats.fillerRatio : 0
       };
 
-      const agent = this.gameGrid.addAgent(emptyPosition.x, emptyPosition.y, null, true);
+      const agent = this.gameGrid.addAgent(emptyPosition.x, emptyPosition.y, null, true, {
+        stats: studentStats,
+        resumeData: stats
+      });
 
-      if (agent) {
-        agent.stats = studentStats;
-        return true;
-      }
-
-      return false;
+      return Boolean(agent);
     } catch (error) {
       console.error("Failed to create student from resume:", error);
       return false;

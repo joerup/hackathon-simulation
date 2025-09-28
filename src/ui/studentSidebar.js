@@ -150,7 +150,8 @@ export class StudentSidebar {
     `;
 
     const studentId = document.createElement('span');
-    studentId.textContent = `Student ${agent.id}`;
+    const displayName = this.getAgentDisplayName(agent);
+    studentId.textContent = displayName;
     studentId.style.cssText = `
       font-weight: 600;
       color: #3d2f1f;
@@ -280,6 +281,21 @@ export class StudentSidebar {
     statItem.appendChild(valueElement);
 
     return statItem;
+  }
+
+
+  /**
+   * Get a friendly display name for an agent
+   */
+  getAgentDisplayName(agent) {
+    if (!agent) return 'Unknown Agent';
+    const rawName = [agent.displayName, agent.stats?.name]
+      .map(value => (typeof value === 'string' ? value.trim() : ''))
+      .find(value => value.length);
+    if (rawName) {
+      return rawName;
+    }
+    return agent.isStudent ? `Student ${agent.id}` : `Recruiter ${agent.id}`;
   }
 
   /**

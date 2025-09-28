@@ -26,7 +26,9 @@ export class ConversationService {
   async startConversation(agent1, agent2, conversationId) {
     try {
       const conversationType = this.getConversationType(agent1, agent2);
-      console.log(`Starting ${conversationType} conversation between ${agent1.isStudent ? 'Student' : 'Recruiter'} ${agent1.id} and ${agent2.isStudent ? 'Student' : 'Recruiter'} ${agent2.id}`);
+      const agent1Label = this.getAgentDisplayName(agent1);
+      const agent2Label = this.getAgentDisplayName(agent2);
+      console.log(`Starting ${conversationType} conversation between ${agent1Label} and ${agent2Label}`);
       
       // Determine who starts the conversation (random)
       const starter = Math.random() < 0.5 ? agent1 : agent2;
@@ -37,11 +39,13 @@ export class ConversationService {
       
       // Generate starter message
       const starterMessage = await this.generateMessage(starter, responder, context, true);
-      console.log(`${starter.isStudent ? 'Student' : 'Recruiter'} ${starter.id}: "${starterMessage}"`);
+      const starterLabel = this.getAgentDisplayName(starter);
+      const responderLabel = this.getAgentDisplayName(responder);
+      console.log(`${starterLabel}: "${starterMessage}"`);
       
       // Generate response message
       const responseMessage = await this.generateMessage(responder, starter, context, false, starterMessage);
-      console.log(`${responder.isStudent ? 'Student' : 'Recruiter'} ${responder.id}: "${responseMessage}"`);
+      console.log(`${responderLabel}: "${responseMessage}"`);
       
       // Store conversation data
       const conversationData = {
@@ -101,6 +105,17 @@ export class ConversationService {
     } else {
       return 'student-recruiter';
     }
+  }
+
+  getAgentDisplayName(agent) {
+    if (!agent) return 'Unknown Agent';
+    const rawName = [agent.displayName, agent.stats?.name]
+      .map(value => (typeof value === 'string' ? value.trim() : ''))
+      .find(value => value.length);
+    if (rawName) {
+      return rawName;
+    }
+    return agent.isStudent ? `Student ${agent.id}` : `Recruiter ${agent.id}`;
   }
 
   /**
@@ -175,13 +190,16 @@ export class ConversationService {
    * Build prompt for student-student conversations (funny small talk)
    */
   buildStudentStudentPrompt(speaker, otherAgent, isStarter, previousMessage) {
-    let prompt = `You are at a hackathon networking event. You are a student (ID: ${speaker.id}) with:
+    const speakerName = this.getAgentDisplayName(speaker);
+    const otherName = this.getAgentDisplayName(otherAgent);
+
+    let prompt = `You are at a hackathon networking event. You are ${speakerName} with:
 - GPA: ${speaker.stats.gpa}
 - Skills: ${speaker.stats.skills.join(', ')}
 - Experience: ${speaker.stats.experience} years
 - Major: ${speaker.stats.major}
 
-You're talking to another student (ID: ${otherAgent.id}) who has:
+You're talking to ${otherName} (student ID: ${otherAgent.id}) who has:
 - GPA: ${otherAgent.stats.gpa}
 - Skills: ${otherAgent.stats.skills.join(', ')}
 - Experience: ${otherAgent.stats.experience} years
@@ -190,108 +208,126 @@ You're talking to another student (ID: ${otherAgent.id}) who has:
 This is casual student-to-student conversation. Be friendly, funny, and relatable. Talk about hackathon experiences, coding struggles, or just general student life. Keep it light and entertaining. Respond with only ONE sentence.`;
 
     if (isStarter) {
-      prompt += `\n\nStart the conversation with a casual, funny greeting in ONE sentence. Maybe mention something about the hackathon or being a student.`;
+      prompt += `
+
+Start the conversation with a casual, funny greeting in ONE sentence. Maybe mention something about the hackathon or being a student.`;
     } else {
-      prompt += `\n\nThe other student just said: "${previousMessage}"\n\nRespond in a casual, funny way that a student would in ONE sentence.`;
+      prompt += `
+
+${otherName} just said: "${previousMessage}"
+
+Respond in a casual, funny way that a student would in ONE sentence.`;
     }
 
     return prompt;
   }
 
-  /**
-   * Build prompt for recruiter-recruiter conversations (smack talk about students)
-   */
   buildRecruiterRecruiterPrompt(speaker, otherAgent, isStarter, previousMessage) {
-    let prompt = `You are at a hackathon networking event. You are a recruiter (ID: ${speaker.id}) from ${speaker.stats.company} looking for ${speaker.stats.lookingFor.role}.
+    const speakerName = this.getAgentDisplayName(speaker);
+    const otherName = this.getAgentDisplayName(otherAgent);
 
-Your company: ${speaker.stats.company}
-Position: ${speaker.stats.lookingFor.role}
-Requirements: ${speaker.stats.requirements.join(', ')}
-Experience needed: ${speaker.stats.experienceRequired} years
-Preferences: ${speaker.stats.lookingFor.preferences}
+    let prompt = `You are at a hackathon networking event. You are ${speakerName} from ${speaker.stats.company}.
+- Role: ${speaker.stats.position}
+- Requirements: ${speaker.stats.requirements.join(', ')}
+- Experience required: ${speaker.stats.experienceRequired} years
+- Preferences: ${speaker.stats.lookingFor.preferences}
 
-You're talking to another recruiter (ID: ${otherAgent.id}) from ${otherAgent.stats.company} who is looking for ${otherAgent.stats.lookingFor.role}.
+You're talking to ${otherName} (recruiter ID: ${otherAgent.id}) from ${otherAgent.stats.company}.
+- Role: ${otherAgent.stats.position}
+- Requirements: ${otherAgent.stats.requirements.join(', ')}
+- Experience required: ${otherAgent.stats.experienceRequired} years
+- Preferences: ${otherAgent.stats.lookingFor.preferences}
 
-This is recruiter-to-recruiter conversation. Be a bit cynical and gossipy about the students, share recruiting war stories, or talk about the challenges of finding good talent. Keep it professional but with some attitude. Respond with only ONE sentence.`;
+This is recruiter-to-recruiter conversation. Be professional but candid about recruiting challenges. Share insights about talent, hiring needs, or industry trends. Respond with only ONE sentence.`;
 
     if (isStarter) {
-      prompt += `\n\nStart the conversation with a greeting and maybe a comment about the students or recruiting challenges in ONE sentence.`;
+      prompt += `
+
+Start the conversation with a professional greeting and recruiting insight in ONE sentence.`;
     } else {
-      prompt += `\n\nThe other recruiter just said: "${previousMessage}"\n\nRespond with recruiter gossip or commentary in ONE sentence.`;
+      prompt += `
+
+${otherName} just said: "${previousMessage}"
+
+Respond with a professional tone about recruiting in ONE sentence.`;
     }
 
     return prompt;
   }
 
-  /**
-   * Build prompt for student-recruiter conversations (professional)
-   */
   buildStudentRecruiterPrompt(speaker, otherAgent, isStarter, previousMessage) {
+    const speakerName = this.getAgentDisplayName(speaker);
+    const otherName = this.getAgentDisplayName(otherAgent);
     const student = speaker.isStudent ? speaker : otherAgent;
     const recruiter = speaker.isStudent ? otherAgent : speaker;
-    
-    let prompt = `You are at a hackathon networking event. `;
-    
+
+    let prompt = `You are at a hackathon networking event.`;
+
     if (speaker.isStudent) {
-      prompt += `You are a student (ID: ${speaker.id}) with:
+      prompt += ` You are ${speakerName} with:
 - GPA: ${student.stats.gpa}
 - Skills: ${student.stats.skills.join(', ')}
 - Experience: ${student.stats.experience} years
 - Major: ${student.stats.major}
 
-You're talking to a recruiter from ${recruiter.stats.company} who is looking for ${recruiter.stats.lookingFor.role}. They want: ${recruiter.stats.lookingFor.preferences}
+You're talking to ${otherName} from ${recruiter.stats.company}, who is looking for ${recruiter.stats.lookingFor.role}. They want: ${recruiter.stats.lookingFor.preferences}`;
+      prompt += `
 
 Be professional, enthusiastic, and show interest in their company and opportunities. Respond with only ONE sentence.`;
     } else {
-      prompt += `You are a recruiter (ID: ${speaker.id}) from ${recruiter.stats.company} looking for ${recruiter.stats.lookingFor.role}. 
+      prompt += ` You are ${speakerName} from ${recruiter.stats.company} looking for ${recruiter.stats.lookingFor.role}.
 Your company: ${recruiter.stats.company}
 Position: ${recruiter.stats.lookingFor.role}
 Requirements: ${recruiter.stats.requirements.join(', ')}
 Experience needed: ${recruiter.stats.experienceRequired} years
 Preferences: ${recruiter.stats.lookingFor.preferences}
 
-You're talking to a student with:
+You're talking to ${otherName}, a student with:
 - GPA: ${student.stats.gpa}
 - Skills: ${student.stats.skills.join(', ')}
 - Experience: ${student.stats.experience} years
-- Major: ${student.stats.major}
+- Major: ${student.stats.major}`;
+      prompt += `
 
 Be professional, friendly, and interested in learning about the student's background. Respond with only ONE sentence.`;
     }
 
     if (isStarter) {
-      prompt += `\n\nStart the conversation with a professional greeting and introduction in ONE sentence.`;
+      prompt += `
+
+Start the conversation with a professional greeting in ONE sentence.`;
     } else {
-      prompt += `\n\nThe other person just said: "${previousMessage}"\n\nRespond professionally and naturally in ONE sentence.`;
+      prompt += `
+
+${otherName} just said: "${previousMessage}"
+
+Respond professionally and naturally in ONE sentence.`;
     }
 
     return prompt;
   }
 
-  /**
-   * Build fallback prompt for unknown conversation types
-   */
   buildFallbackPrompt(speaker, otherAgent, isStarter, previousMessage) {
-    let prompt = `You are at a hackathon networking event. `;
-    
-    if (speaker.isStudent) {
-      prompt += `You are a student (ID: ${speaker.id}) with major: ${speaker.stats.major}.`;
-    } else {
-      prompt += `You are a recruiter (ID: ${speaker.id}) from ${speaker.stats.company}.`;
-    }
+    const speakerName = this.getAgentDisplayName(speaker);
+    const otherName = this.getAgentDisplayName(otherAgent);
+
+    let prompt = `You are at a hackathon networking event. You are ${speakerName} (${speaker.isStudent ? 'student' : 'recruiter'} ID: ${speaker.id}).`;
 
     if (isStarter) {
-      prompt += `\n\nStart the conversation with a brief greeting in ONE sentence.`;
+      prompt += `
+
+Start the conversation with a brief greeting in ONE sentence.`;
     } else {
-      prompt += `\n\nThe other person just said: "${previousMessage}"\n\nRespond briefly in ONE sentence.`;
+      prompt += `
+
+${otherName} just said: "${previousMessage}"
+
+Respond briefly in ONE sentence.`;
     }
 
     return prompt;
   }
 
-  /**
-   * Generate fallback message when LLM is not available
-   */
   generateFallbackMessage(speaker, otherAgent, isStarter) {
     const conversationType = this.getConversationType(speaker, otherAgent);
     
@@ -311,10 +347,15 @@ Be professional, friendly, and interested in learning about the student's backgr
    * Generate fallback for student-student conversations
    */
   generateStudentStudentFallback(speaker, otherAgent, isStarter) {
+    const speakerName = this.getAgentDisplayName(speaker);
+    const primarySkill = Array.isArray(speaker.stats.skills) && speaker.stats.skills.length
+      ? speaker.stats.skills[0]
+      : 'coding';
+
     if (isStarter) {
-      return `Hey! I'm a ${speaker.stats.major} student - how's the hackathon going for you?`;
+      return `Hey! I'm ${speakerName}, a ${speaker.stats.major} student—how's the hackathon going for you?`;
     } else {
-      return `Pretty good! I'm working on some ${speaker.stats.skills[0] || 'coding'} stuff.`;
+      return `${speakerName} here—pretty good! I'm working on some ${primarySkill} stuff.`;
     }
   }
 
@@ -322,10 +363,12 @@ Be professional, friendly, and interested in learning about the student's backgr
    * Generate fallback for recruiter-recruiter conversations
    */
   generateRecruiterRecruiterFallback(speaker, otherAgent, isStarter) {
+    const speakerName = this.getAgentDisplayName(speaker);
+
     if (isStarter) {
-      return `Hey, I'm from ${speaker.stats.company} - these students are getting more competitive every year!`;
+      return `Hey, ${speakerName} from ${speaker.stats.company} here—these students are getting more competitive every year!`;
     } else {
-      return `Tell me about it! We're looking for ${speaker.stats.lookingFor.role} but finding good talent is tough.`;
+      return `${speakerName} agrees—finding great talent for ${speaker.stats.lookingFor.role} is tougher every season.`;
     }
   }
 
@@ -333,17 +376,26 @@ Be professional, friendly, and interested in learning about the student's backgr
    * Generate fallback for student-recruiter conversations
    */
   generateStudentRecruiterFallback(speaker, otherAgent, isStarter) {
+    const speakerName = this.getAgentDisplayName(speaker);
+    const otherName = this.getAgentDisplayName(otherAgent);
+
     if (isStarter) {
       if (speaker.isStudent) {
-        return `Hi! I'm a ${speaker.stats.major} student and I'd love to learn more about opportunities at your company.`;
+        return `Hi! I'm ${speakerName}, a ${speaker.stats.major} student, and I'd love to learn more about opportunities at your company.`;
       } else {
-        return `Hello! I'm from ${speaker.stats.company} and we're looking for talented developers like yourself.`;
+        return `Hello! I'm ${speakerName} from ${speaker.stats.company}, and we're looking for talented developers like you.`;
       }
     } else {
       if (speaker.isStudent) {
-        return `That sounds great! I'm particularly interested in ${speaker.stats.skills[0] || 'software development'}.`;
+        const focus = Array.isArray(speaker.stats.skills) && speaker.stats.skills.length
+          ? speaker.stats.skills[0]
+          : 'software development';
+        return `That sounds great, ${otherName}! I'm especially interested in ${focus}.`;
       } else {
-        return `Excellent! We'd love to hear more about your experience with ${otherAgent.stats.skills[0] || 'programming'}.`;
+        const interest = Array.isArray(otherAgent.stats.skills) && otherAgent.stats.skills.length
+          ? otherAgent.stats.skills[0]
+          : 'programming';
+        return `Excellent, ${otherName}! I'd love to hear more about your experience with ${interest}.`;
       }
     }
   }
@@ -352,10 +404,12 @@ Be professional, friendly, and interested in learning about the student's backgr
    * Generate generic fallback message
    */
   generateGenericFallback(speaker, otherAgent, isStarter) {
+    const speakerName = this.getAgentDisplayName(speaker);
+
     if (isStarter) {
-      return `Hello! Nice to meet you.`;
+      return `Hello! ${speakerName} here—nice to meet you.`;
     } else {
-      return `Thanks! Nice talking with you.`;
+      return `Thanks, ${this.getAgentDisplayName(otherAgent)}! ${speakerName} enjoyed chatting with you.`;
     }
   }
 
@@ -367,13 +421,17 @@ Be professional, friendly, and interested in learning about the student's backgr
     const responder = starter === agent1 ? agent2 : agent1;
     
     const conversationType = this.getConversationType(agent1, agent2);
-    console.log(`Starting ${conversationType} conversation between ${agent1.isStudent ? 'Student' : 'Recruiter'} ${agent1.id} and ${agent2.isStudent ? 'Student' : 'Recruiter'} ${agent2.id}`);
+    const agent1Label = this.getAgentDisplayName(agent1);
+    const agent2Label = this.getAgentDisplayName(agent2);
+    console.log(`Starting ${conversationType} conversation between ${agent1Label} and ${agent2Label}`);
     
     const starterMessage = this.generateFallbackMessage(starter, responder, true);
     const responseMessage = this.generateFallbackMessage(responder, starter, false);
     
-    console.log(`${starter.isStudent ? 'Student' : 'Recruiter'} ${starter.id}: "${starterMessage}"`);
-    console.log(`${responder.isStudent ? 'Student' : 'Recruiter'} ${responder.id}: "${responseMessage}"`);
+    const starterLabel = this.getAgentDisplayName(starter);
+    const responderLabel = this.getAgentDisplayName(responder);
+    console.log(`${starterLabel}: "${starterMessage}"`);
+    console.log(`${responderLabel}: "${responseMessage}"`);
     
     // Store conversation data
     const conversationData = {

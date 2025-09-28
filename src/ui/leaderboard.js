@@ -413,7 +413,7 @@ export class LeaderboardModal {
     const rankText = this.getRankText(index);
     const cells = [
       this.createTableCell(rankText, { bold: true, width: '60px' }),
-      this.createTableCell(student.name || `Student ${student.id}`, { bold: true }),
+      this.createTableCell(this.getStudentDisplayName(student), { bold: true }),
       this.createTableCell(student.jobOffers || 0, { centered: true, bold: true }),
       this.createTableCell(student.recruitersSpokenTo || 0, { centered: true }),
       this.createTableCell(student.distanceTraveled || 0, { centered: true })
@@ -421,6 +421,21 @@ export class LeaderboardModal {
 
     cells.forEach(cell => row.appendChild(cell));
     return row;
+  }
+
+
+  /**
+   * Resolve a student name with sensible fallbacks.
+   */
+  getStudentDisplayName(student) {
+    if (!student) return 'Unknown Student';
+    const rawName = [student.displayName, student.name, student.stats?.name]
+      .map(value => (typeof value === 'string' ? value.trim() : ''))
+      .find(value => value.length);
+    if (rawName) {
+      return rawName;
+    }
+    return `Student ${student.id}`;
   }
 
   /**
