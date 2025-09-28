@@ -2,12 +2,16 @@ import { app, BrowserWindow } from "electron/main";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
+// Set the app name
+app.setName("LinkedOut - BlockArena");
+
 loadEnvFile();
 
 const createWindow = () => {
   const win = new BrowserWindow({
     width: 1024,
     height: 768,
+    title: "LinkedOut - BlockArena",
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false

@@ -48,7 +48,7 @@ export function createHeader(gameGrid = null) {
   `;
 
   const title = document.createElement('h1');
-  title.textContent = 'LinkedOut';
+  title.textContent = 'LinkedOut - BlockArena';
   title.style.cssText = `
     margin: 0;
     font-size: 1.8rem;
