@@ -349,20 +349,20 @@ RULES: Max 4-5 words + emoji OR just single emoji (ends convo)`;
    * Build prompt for recruiter-recruiter conversations (smack talk about students)
    */
   buildRecruiterRecruiterPrompt(speaker, otherAgent, isStarter, conversationHistory) {
-    let prompt = `YOU ARE: ${speaker.stats.name}, recruiter at ${speaker.stats.company}
+    let prompt = `YOU ARE: ${speaker.stats.name}, recruiter at QUALCOMM
 
 YOUR BACKGROUND:
-- Position: ${speaker.stats.position}
+- Position: ${speaker.stats.position} at QUALCOMM
 - Hiring for: ${speaker.stats.lookingFor.role} 
 - Need: ${speaker.stats.requirements.join(', ')} (${speaker.stats.experienceRequired}+ years)
 - Style: ${speaker.stats.lookingFor.preferences}
 
-TALKING TO: ${otherAgent.stats.name} from ${otherAgent.stats.company} (hiring ${otherAgent.stats.lookingFor.role})
+TALKING TO: ${otherAgent.stats.name} from QUALCOMM (hiring ${otherAgent.stats.lookingFor.role})
 
-STYLE: Casual recruiter talk - compare roles, requirements, share experiences about finding good candidates`;
+STYLE: Casual QUALCOMM recruiter talk - discuss QUALCOMM roles, requirements, share experiences about finding good candidates for the company`;
 
     if (isStarter) {
-      prompt += `\n\nStart conversation:`;
+      prompt += `\n\nStart conversation by mentioning you work at QUALCOMM:`;
     } else {
       // Add conversation history
       if (conversationHistory.length > 0) {
@@ -398,11 +398,11 @@ YOUR BACKGROUND:`;
 - GPA: ${student.stats.gpa}, ${student.stats.internships} internships
 - Energy: ${student.stats.energyScore}/100
 
-TALKING TO: ${recruiter.stats.name} from ${recruiter.stats.company}
+TALKING TO: ${recruiter.stats.name} from QUALCOMM
 - Hiring: ${recruiter.stats.lookingFor.role}
 - Needs: ${recruiter.stats.requirements.slice(0, 2).join(', ')} (${recruiter.stats.experienceRequired}+ years)
 
-GOAL: Get the job. Show your skills match their needs. If they're rude about your qualifications, get defensive.
+GOAL: Get the job at QUALCOMM. Show your skills match their needs. If they're rude about your qualifications, get defensive.
 
 CONVERSATION FLOW:
 - If conversation is going well, you or recruiter may suggest exchanging LinkedIn, resume, or email
@@ -410,7 +410,7 @@ CONVERSATION FLOW:
 
     } else {
       prompt += `
-- Recruiter at ${recruiter.stats.company}
+- Recruiter at QUALCOMM
 - Hiring: ${recruiter.stats.lookingFor.role}
 - Need: ${recruiter.stats.requirements.slice(0, 2).join(', ')} (${recruiter.stats.experienceRequired}+ years)
 
@@ -419,7 +419,7 @@ TALKING TO: ${student.stats.name}
 - Skills: ${student.stats.skills.slice(0, 3).join(', ')}
 - GPA: ${student.stats.gpa}
 
-GOAL: Assess if they're qualified.
+GOAL: Assess if they're qualified for QUALCOMM.
 IMPORTANT: After **1-2** total messages in the conversation, decide whether or not they are qualified.
 They do not need to meet all qualifications but should show potential. Be optimistic.
 If they lack experience/skills, become dismissive or frustrated, and end the conversation quickly.
@@ -428,7 +428,7 @@ If they are a good fit, ask for their resume or exchange contact info by ending 
     }
 
     if (isStarter) {
-      prompt += `\n\nStart conversation:`;
+      prompt += `\n\nStart conversation by introducing yourself as a QUALCOMM recruiter:`;
     } else {
       // Add conversation history
       if (conversationHistory.length > 0) {

@@ -109,12 +109,12 @@ function buildStudentStats() {
 function buildRecruiterStats() {
   return {
     name: buildFullName(RECRUITER_FIRST_NAMES, RECRUITER_LAST_NAMES),
-    company: randomItem(COMPANIES),
+    company: "QUALCOMM",
     position: randomItem(POSITIONS),
     requirements: pickSubset(BASE_SKILLS, randomInt(2, 4)),
     experienceRequired: randomInt(1, 5),
     lookingFor: {
-      company: randomItem(COMPANIES),
+      company: "QUALCOMM",
       role: randomItem(POSITIONS),
       preferences: randomItem(PREFERENCES)
     },
