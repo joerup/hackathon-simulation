@@ -297,7 +297,7 @@ export class LeaderboardSidebar {
     const totals = {
       'Students': students.length,
       'Connections': students.reduce((s, st) => s + (st.stats?.connections || st.connections || 0), 0),
-      'Recruiters Met': students.reduce((s, st) => s + (st.calculatedInteractionCount || 0), 0),
+      'Recruiters Met': students.reduce((s, st) => s + (st.recruitersSpokenTo || 0), 0),
       'Total Scores': students.reduce((s, st) => s + (st.calculatedTotalScore || 0), 0).toFixed(0)
     };
 
@@ -388,7 +388,7 @@ export class LeaderboardSidebar {
 
         // Get data
         const connections = student.stats?.connections || student.connections || 0;
-        const recruitersMet = student.calculatedInteractionCount || 0;
+        const recruitersMet = student.recruitersSpokenTo || 0;
         const totalScores = student.calculatedTotalScore ? student.calculatedTotalScore.toFixed(0) : '0';
         const distance = Math.round(student.distanceTraveled || 0);
 

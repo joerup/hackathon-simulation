@@ -97,15 +97,6 @@ export class ConversationState {
         agent.conversationPartner = null;
         agent.conversationId = null;
         agent.lastConvoCooldown = 15;
-        
-        // Track recruiter conversations for students
-        if (agent.isStudent && typeof agent.recruitersSpokenTo === 'number') {
-          const otherAgentId = conversation.participants.find(id => id !== agentId);
-          const otherAgent = this.agents.find(a => a.id === otherAgentId);
-          if (otherAgent && !otherAgent.isStudent) {
-            agent.recruitersSpokenTo++;
-          }
-        }
       }
       this.agentConversations.delete(agentId);
     });
