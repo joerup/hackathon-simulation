@@ -13,10 +13,19 @@ export class GameGrid {
     this.renderer = new GridRenderer(this.gameState);
     this.animationId = null;
     this.isRunning = false;
+    this.chatSidebar = null; // Reference to chat sidebar
     this.speedControl = null;
     
     // Initialize the game with sample data
     this.initializeGame();
+  }
+
+  /**
+   * Set the chat sidebar reference
+   */
+  setChatSidebar(chatSidebar) {
+    this.chatSidebar = chatSidebar;
+    this.gameState.setChatSidebar(chatSidebar);
   }
 
   /**
@@ -124,10 +133,20 @@ export class GameGrid {
 export function initGameGrid(size = 10) {
   const gameGrid = new GameGrid(size);
 
-  // Add recruiters (no students initially)
-  gameGrid.addAgent(8, 1, null, false); // Recruiter (will get ID 1)
-  gameGrid.addAgent(1, 6, null, false); // Recruiter (will get ID 2)
-  gameGrid.addAgent(7, 8, null, false); // Recruiter (will get ID 3)
+  // Add recruiters
+  const recruiter1 = gameGrid.addAgent(8, 1, null, false); // Recruiter (will get ID 1)
+  const recruiter2 = gameGrid.addAgent(1, 6, null, false); // Recruiter (will get ID 2)
+  const recruiter3 = gameGrid.addAgent(7, 8, null, false); // Recruiter (will get ID 3)
+
+  // Log recruiter information for debugging
+  console.log('Recruiter 1 looking for:', recruiter1.stats.lookingFor);
+  console.log('Recruiter 2 looking for:', recruiter2.stats.lookingFor);
+  console.log('Recruiter 3 looking for:', recruiter3.stats.lookingFor);
+
+  // Add students
+  gameGrid.addAgent(2, 2, null, true); // Student (will get ID 4)
+  gameGrid.addAgent(5, 5, null, true); // Student (will get ID 5)
+  gameGrid.addAgent(9, 3, null, true); // Student (will get ID 6)
 
   // Initialize the renderer (this creates the DOM elements)
   gameGrid.render();

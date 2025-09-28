@@ -1,3 +1,5 @@
+import { ConversationService } from './services/conversationService.js';
+
 /**
  * ConversationState class - Manages all conversations globally
  * Each conversation is treated as an individual entity with its own properties
@@ -8,6 +10,16 @@ export class ConversationState {
     this.nextConversationId = 0;
     this.agentConversations = new Map(); // Map<agentId, conversationId>
     this.agents = agents; // Reference to agents array for state updates
+    this.conversationService = new ConversationService();
+    this.chatSidebar = null; // Reference to chat sidebar
+  }
+
+  /**
+   * Set the chat sidebar reference
+   */
+  setChatSidebar(chatSidebar) {
+    this.chatSidebar = chatSidebar;
+    this.conversationService.setChatSidebar(chatSidebar);
   }
 
   /**
@@ -24,8 +36,8 @@ export class ConversationState {
       participants: [agent1.id, agent2.id],
       startTime: Date.now(),
       duration: 0,
-      endProbability: this.calculateEndProbability(agent1, agent2),
       isActive: true,
+      isComplete: false,
       quality: this.calculateConversationQuality(agent1, agent2)
     };
 
@@ -41,7 +53,35 @@ export class ConversationState {
     agent2.conversationPartner = agent1.id;
     agent2.conversationId = conversationId;
 
+    // Start async conversation using LLM
+    this.startAsyncConversation(agent1, agent2, conversationId);
+
     return conversationId;
+  }
+
+  /**
+   * Start async conversation using the conversation service
+   * @param {Object} agent1 - First agent
+   * @param {Object} agent2 - Second agent
+   * @param {string} conversationId - Conversation ID
+   */
+  async startAsyncConversation(agent1, agent2, conversationId) {
+    try {
+      await this.conversationService.startConversation(agent1, agent2, conversationId);
+      
+      // Mark conversation as complete after LLM processing
+      const conversation = this.conversations.get(conversationId);
+      if (conversation) {
+        conversation.isComplete = true;
+      }
+    } catch (error) {
+      console.error('Error in async conversation:', error);
+      // Mark as complete even if there was an error
+      const conversation = this.conversations.get(conversationId);
+      if (conversation) {
+        conversation.isComplete = true;
+      }
+    }
   }
 
   /**
@@ -67,6 +107,9 @@ export class ConversationState {
       }
       this.agentConversations.delete(agentId);
     });
+
+    // Clean up conversation service
+    this.conversationService.removeConversation(conversationId);
 
     // Remove from active conversations
     this.conversations.delete(conversationId);
@@ -109,9 +152,12 @@ export class ConversationState {
       // Update duration
       conversation.duration = Date.now() - conversation.startTime;
       
-      // Check if conversation should end based on probability
-      if (Math.random() < conversation.endProbability) {
-        this.endConversation(conversation.id);
+      // Check if conversation is complete and should end
+      if (conversation.isComplete) {
+        // End conversation after a short delay to allow other agents to move
+        setTimeout(() => {
+          this.endConversation(conversation.id);
+        }, 2000); // 2 second delay
       }
     });
   }
@@ -146,29 +192,6 @@ export class ConversationState {
     });
   }
 
-  /**
-   * Calculate the probability that a conversation will end
-   * This can be based on agent compatibility, conversation quality, etc.
-   * @param {Object} agent1 - First agent
-   * @param {Object} agent2 - Second agent
-   * @returns {number} Probability between 0 and 1
-   */
-  calculateEndProbability(agent1, agent2) {
-    // Base probability of 10% per frame (same as original)
-    let baseProbability = 0.1;
-    
-    // Adjust based on agent compatibility
-    if (agent1.isStudent !== agent2.isStudent) {
-      // Student-recruiter conversations might last longer
-      baseProbability *= 0.8;
-    }
-    
-    // Adjust based on conversation quality
-    const quality = this.calculateConversationQuality(agent1, agent2);
-    baseProbability *= (2 - quality); // Higher quality = lower end probability
-    
-    return Math.min(baseProbability, 0.5); // Cap at 50%
-  }
 
   /**
    * Calculate conversation quality based on agent compatibility
@@ -314,7 +337,7 @@ export class ConversationState {
         participants: [...conv.participants],
         duration: conv.duration,
         quality: conv.quality,
-        endProbability: conv.endProbability
+        isComplete: conv.isComplete
       })),
       stats: this.getStats()
     };
