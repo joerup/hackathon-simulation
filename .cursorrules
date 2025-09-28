@@ -1,0 +1,174 @@
+# Hackathon Simulation Project - Cursor Rules
+
+## Project Overview
+This is a hackathon simulation game where students and recruiters interact in a grid-based environment. The project uses LLM APIs for resume analysis and agent behavior simulation.
+
+## LLM Integration Patterns
+
+### API Configuration
+- All LLM calls use the Snapdragon API via `src/config.js`
+- Configuration is environment-based with fallbacks:
+  ```javascript
+  const snapdragonDefaults = {
+    apiKey: process.env.SNAPDRAGON_API_KEY || "",
+    apiUrl: process.env.SNAPDRAGON_API_URL || "https://api.snapdragon.ai/v1/chat/completions",
+    model: process.env.SNAPDRAGON_MODEL || "snapdragon-llm-latest"
+  };
+  ```
+
+### LLM Call Structure
+All LLM calls should follow this pattern (see `src/services/snapdragonClient.js`):
+
+1. **API Key Validation**: Always check for API key presence
+2. **Structured Request**: Use consistent fetch structure with proper headers
+3. **Error Handling**: Implement comprehensive error handling with fallbacks
+4. **Response Parsing**: Use robust parsing with multiple fallback strategies
+5. **Data Normalization**: Always normalize and validate LLM responses
+
+```javascript
+export async function requestLLM(payload) {
+  const { apiKey, apiUrl, model } = snapdragonConfig;
+
+  if (!apiKey) {
+    console.warn("LLM API key missing. Returning placeholder data.");
+    return createPlaceholderData(payload);
+  }
+
+  const response = await fetch(apiUrl, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`
+    },
+    body: JSON.stringify({
+      model,
+      messages: [
+        {
+          role: "System",
+          content: "You are a helpful assistant."
+        },
+        {
+          role: "User",
+          content: `[Your specific prompt here] ${payload.text}`
+        }
+      ],
+      stream: false
+    })
+  });
+
+  if (!response.ok) {
+    const errorDetail = await safeReadError(response);
+    throw new Error(`LLM API request failed (${response.status}): ${errorDetail}`);
+  }
+
+  const data = await response.json();
+  const message = data?.choices?.[0]?.message;
+  const rawContent = typeof message?.content === "string" ? message.content.trim() : "";
+  const parsedData = parseLLMResponse(rawContent);
+  
+  return normalizeData(parsedData, payload);
+}
+```
+
+### Response Parsing Strategy
+1. **Primary**: Try direct JSON parsing
+2. **Secondary**: Apply formatting fixes (quote keys, fix commas, etc.)
+3. **Tertiary**: Use custom JavaScript object literal parser
+4. **Fallback**: Return structured placeholder data
+
+### Error Handling
+- Always provide meaningful error messages
+- Include response status codes and error details
+- Implement graceful degradation with placeholder data
+- Log parsing failures for debugging
+
+## File Organization Principles
+
+### New Feature Implementation
+**Prefer creating new files for unique features** rather than extending existing ones:
+
+- **Services**: New LLM integrations go in `src/services/`
+- **UI Components**: New UI features go in `src/ui/`
+- **Utilities**: New utility functions go in `src/utils/`
+- **State Management**: New state classes go in `src/` root
+- **Configuration**: New config options go in `src/config.js`
+
+### File Naming Conventions
+- Use camelCase for file names: `conversationState.js`
+- Use descriptive names that indicate purpose: `snapdragonClient.js`
+- Group related functionality in subdirectories: `src/ui/`, `src/services/`
+
+### Code Structure
+- **Classes**: Use for complex state management (GameState, ConversationState)
+- **Functions**: Use for utility functions and API calls
+- **Modules**: Export specific functions, not entire modules
+- **Imports**: Use explicit imports, avoid wildcards
+
+## Architecture Patterns
+
+### State Management
+- **Global State**: Use dedicated classes (GameState, ConversationState)
+- **Local State**: Use component-level state for UI
+- **Synchronization**: Always maintain consistency between global and local state
+
+### Agent System
+- **Properties**: All agents have consistent properties (id, isStudent, stats, appearance, etc.)
+- **ID Management**: Use sequential IDs starting from 1
+- **Cooldowns**: Implement cooldown systems for realistic behavior
+- **Conversations**: Use global conversation state management
+
+### Rendering
+- **Separation**: Keep rendering logic separate from game logic
+- **Updates**: Use efficient update mechanisms (only re-render changed elements)
+- **Visual Feedback**: Provide clear visual indicators for different states
+
+## Development Guidelines
+
+### Code Quality
+- **Comments**: Document complex logic and API patterns
+- **Error Handling**: Always handle errors gracefully
+- **Type Safety**: Use consistent data structures and validation
+- **Performance**: Consider performance implications of frequent updates
+
+### Testing
+- **Placeholder Data**: Always provide fallback data for testing
+- **Console Logging**: Use meaningful console messages for debugging
+- **State Inspection**: Provide methods to inspect current state
+
+### API Integration
+- **Rate Limiting**: Consider API rate limits in implementation
+- **Caching**: Implement caching where appropriate
+- **Retry Logic**: Add retry mechanisms for failed requests
+- **Timeout Handling**: Implement proper timeout handling
+
+## Common Patterns
+
+### LLM Prompt Engineering
+- Use clear, structured prompts with specific output formats
+- Include examples in prompts when possible
+- Specify data types and constraints clearly
+- Use system messages to set context
+
+### Data Validation
+- Always validate LLM responses before using
+- Implement type checking and range validation
+- Provide sensible defaults for missing data
+- Log validation failures for debugging
+
+### UI State Management
+- Keep UI state synchronized with game state
+- Use event-driven updates where possible
+- Implement proper cleanup for event listeners
+- Provide loading states for async operations
+
+## Environment Setup
+- Use environment variables for API keys
+- Provide fallback configurations for development
+- Document required environment variables
+- Use consistent naming for environment variables
+
+## Performance Considerations
+- Minimize DOM updates
+- Use efficient data structures
+- Implement proper cleanup
+- Consider memory usage for long-running simulations

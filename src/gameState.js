@@ -107,11 +107,26 @@ export class GameState {
         major: ['Computer Science', 'Software Engineering', 'Data Science'][Math.floor(Math.random() * 3)]
       };
     } else {
+      const companies = ['Tech Corp', 'StartupXYZ', 'Big Tech Inc', 'Innovation Labs'];
+      const positions = ['Software Engineer', 'Frontend Developer', 'Backend Developer', 'Full Stack Developer'];
+      const preferences = [
+        'Looking for candidates with strong problem-solving skills',
+        'Seeking developers with experience in modern frameworks',
+        'Interested in candidates with leadership potential',
+        'Want developers who can work in fast-paced environments',
+        'Looking for team players with good communication skills'
+      ];
+      
       return {
-        company: ['Tech Corp', 'StartupXYZ', 'Big Tech Inc', 'Innovation Labs'][Math.floor(Math.random() * 4)],
-        position: ['Software Engineer', 'Frontend Developer', 'Backend Developer', 'Full Stack Developer'][Math.floor(Math.random() * 4)],
+        company: companies[Math.floor(Math.random() * companies.length)],
+        position: positions[Math.floor(Math.random() * positions.length)],
         requirements: ['JavaScript', 'Python', 'React', 'Node.js'].slice(0, Math.floor(Math.random() * 3) + 1),
-        experienceRequired: Math.floor(Math.random() * 5) + 1 // 1-5 years
+        experienceRequired: Math.floor(Math.random() * 5) + 1, // 1-5 years
+        lookingFor: {
+          company: companies[Math.floor(Math.random() * companies.length)],
+          role: positions[Math.floor(Math.random() * positions.length)],
+          preferences: preferences[Math.floor(Math.random() * preferences.length)]
+        }
       };
     }
   }
