@@ -14,7 +14,7 @@ export class Modal {
     this.wasSimulationRunning = false;
     this.file = null;
     this.isProcessing = false;
-    this.usingSample = false;
+    this.usingSample = true;
     this.selectedSampleFile = null;
   }
 
@@ -163,8 +163,8 @@ export class Modal {
       flex: 1;
       padding: 0.75rem;
       text-align: center;
-      background: linear-gradient(140deg, #d4a574, #c1955f);
-      color: #3d2f1f;
+      background: transparent;
+      color: #8b6f47;
       border-radius: 6px;
       cursor: pointer;
       font-weight: 600;
@@ -178,8 +178,8 @@ export class Modal {
       flex: 1;
       padding: 0.75rem;
       text-align: center;
-      background: transparent;
-      color: #8b6f47;
+      background: linear-gradient(140deg, #d4a574, #c1955f);
+      color: #3d2f1f;
       border-radius: 6px;
       cursor: pointer;
       font-weight: 600;
@@ -195,6 +195,7 @@ export class Modal {
     uploadSection.style.cssText = `
       width: 100%;
       max-width: 400px;
+      display: none;
     `;
 
     // Sample selection section
@@ -202,7 +203,6 @@ export class Modal {
     sampleSection.style.cssText = `
       width: 100%;
       max-width: 400px;
-      display: none;
     `;
 
     // File drop area
@@ -377,6 +377,7 @@ export class Modal {
 
     sampleResumes.forEach((resume, index) => {
       const sampleCard = document.createElement('div');
+      sampleCard.textContent = `Resume ${index + 1}`;
       sampleCard.style.cssText = `
         padding: 1rem;
         background: rgba(250, 247, 240, 0.3);
@@ -385,28 +386,23 @@ export class Modal {
         cursor: pointer;
         transition: all 0.2s ease;
         text-align: center;
-      `;
-
-      const sampleTitle = document.createElement('div');
-      sampleTitle.textContent = `Resume ${index + 1}`;
-      sampleTitle.style.cssText = `
-        color: #5a4a3a;
-        font-weight: 500;
+        color: #3d2f1f;
+        font-weight: 600;
         font-size: 0.9rem;
       `;
-
-      sampleCard.appendChild(sampleTitle);
 
       sampleCard.addEventListener('click', () => {
         // Remove selection from other cards
         sampleGrid.querySelectorAll('div').forEach(card => {
           card.style.background = 'rgba(250, 247, 240, 0.3)';
           card.style.borderColor = 'rgba(139, 113, 85, 0.3)';
+          card.style.color = '#3d2f1f';
         });
 
         // Select this card
         sampleCard.style.background = 'rgba(184, 158, 130, 0.2)';
         sampleCard.style.borderColor = 'rgba(139, 113, 85, 0.6)';
+        sampleCard.style.color = '#3d2f1f';
 
         selectedSampleIndex = index;
         this.selectedSampleFile = resume;
@@ -420,12 +416,14 @@ export class Modal {
       sampleCard.addEventListener('mouseenter', () => {
         if (selectedSampleIndex !== index) {
           sampleCard.style.background = 'rgba(250, 247, 240, 0.5)';
+          sampleCard.style.color = '#3d2f1f';
         }
       });
 
       sampleCard.addEventListener('mouseleave', () => {
         if (selectedSampleIndex !== index) {
           sampleCard.style.background = 'rgba(250, 247, 240, 0.3)';
+          sampleCard.style.color = '#3d2f1f';
         }
       });
 
