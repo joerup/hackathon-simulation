@@ -1,4 +1,4 @@
-/**
+﻿/**
  * LeaderboardSidebar component - Displays student leaderboard in right sidebar
  */
 
@@ -16,6 +16,8 @@ const S = {
   borderLight: 'rgba(139, 113, 85, 0.1)', 
   borderDark: 'rgba(139, 113, 85, 0.2)'
 };
+
+const COLUMN_TEMPLATE = '40px minmax(0, 2fr) repeat(3, minmax(0, 1fr))'
 
 export class LeaderboardSidebar {
   constructor(gameGrid = null) {
@@ -343,7 +345,7 @@ export class LeaderboardSidebar {
         padding: 0.5rem;
         border-bottom: 1px solid ${S.borderLight};
         display: grid;
-        grid-template-columns: 35px 1fr auto auto auto;
+        grid-template-columns: ${COLUMN_TEMPLATE};
         gap: 0.4rem;
         font-weight: 600;
         font-size: 0.75rem;
@@ -351,7 +353,7 @@ export class LeaderboardSidebar {
         align-items: center;
       `);
 
-      const headerItems = ['#', 'Name', 'Connections', 'Recruiters', 'Scores', 'Distance'];
+      const headerItems = ['#', 'Name', 'Connections', 'Recruiters', 'Scores'];
       headerItems.forEach((text, i) => {
         const item = this.createElement('div', i > 1 ? 'text-align: center;' : '', text);
         header.appendChild(item);
@@ -370,7 +372,7 @@ export class LeaderboardSidebar {
         const row = this.createElement('div', `
           padding: 0.4rem 0.5rem;
           display: grid;
-          grid-template-columns: 35px 1fr auto auto auto;
+          grid-template-columns: ${COLUMN_TEMPLATE};
           gap: 0.4rem;
           border-bottom: 1px solid ${S.borderLight};
           transition: background-color 0.2s ease;
