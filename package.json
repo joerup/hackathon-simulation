@@ -1,8 +1,9 @@
 {
-  "name": "simulation",
+  "name": "linkedout-block-arena",
+  "productName": "LinkedOut - BlockArena",
   "version": "1.0.0",
   "type": "module",
-  "description": "hackathon simulation",
+  "description": "LinkedOut - BlockArena: Hackathon simulation game",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
