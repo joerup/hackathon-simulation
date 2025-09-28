@@ -63,6 +63,7 @@ export class GameState {
       id: id || this.agents.length,
       isStudent: isStudent,
       stats: this.generateAgentStats(isStudent),
+      appearance: this.generateAgentAppearance(isStudent),
       position: [x, y],
       inConversation: false,
       conversationPartner: null,
@@ -101,6 +102,56 @@ export class GameState {
         experienceRequired: Math.floor(Math.random() * 5) + 1 // 1-5 years
       };
     }
+  }  generateAgentAppearance(isStudent) {
+    const pick = (options) => options[Math.floor(Math.random() * options.length)];
+
+    const skinTones = [
+      '#f9d7b9', '#f4c6a5', '#e6b189', '#d29b6d', '#b2784e', '#8d5524'
+    ];
+
+    const studentShirtPalette = [
+      '#ffadad', '#ffd6a5', '#fdffb6', '#caffbf', '#9bf6ff', '#a0c4ff', '#bdb2ff', '#ffc6ff', '#f7b267', '#f48498',
+      '#84dccf', '#95b8d1'
+    ];
+
+    const recruiterShirtPalette = [
+      '#6c8ed4', '#4e6bb1', '#3f5d8b', '#889bb7', '#b0c4de'
+    ];
+
+    const hairStyles = isStudent
+      ? ['beanie', 'curly', 'pigtails', 'bob', 'spiky', 'afro', 'ponytail', 'buzz']
+      : ['sidepart', 'slick', 'short'];
+
+    const hairColors = [
+      '#2b1b10', '#3f2a1a', '#5a3825', '#704214', '#a55728', '#d08159', '#f5e1a4', '#2d4370', '#4b2b5c', '#1f1f1f'
+    ];
+
+    const bodyScales = isStudent ? [0.85, 0.95, 1, 1.08, 1.15] : [0.95, 1, 1.05];
+
+    const accentColors = ['#ffe066', '#ff6b6b', '#4ecdc4', '#48bfe3', '#e599f7', '#ffd166', '#c77dff'];
+
+    const appearance = {
+      skinTone: pick(skinTones),
+      shirtColor: pick(isStudent ? studentShirtPalette : recruiterShirtPalette),
+      hairStyle: pick(hairStyles),
+      hairColor: pick(hairColors),
+      bodyScale: pick(bodyScales),
+      accentColor: pick(accentColors)
+    };
+
+    const faceAccessories = ['none', 'freckles', 'rosyCheeks', 'glasses'];
+    appearance.faceAccessory = pick(faceAccessories);
+
+    const eyeShapes = ['round', 'oval', 'wide'];
+    appearance.eyeShape = pick(eyeShapes);
+
+    const mouthStyles = ['flat', 'smile', 'open'];
+    appearance.mouth = pick(mouthStyles);
+
+    const accentChance = isStudent ? 0.75 : 0.45;
+    appearance.hasAccent = Math.random() < accentChance || appearance.hairStyle === 'beanie';
+
+    return appearance;
   }
 
   /**
@@ -340,3 +391,6 @@ export class GameState {
     return obstacles;
   }
 }
+
+
+
