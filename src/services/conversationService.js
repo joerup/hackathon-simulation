@@ -329,8 +329,6 @@ Student has ${student.stats.major} background with ${student.stats.skills.slice(
     return prompt;
   }
 
-
-
   /**
    * Get conversation data
    */

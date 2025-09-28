@@ -20,7 +20,9 @@ export function generateAgentStats(isStudent) {
       gpa: Math.random() * 2 + 2,
       skills: BASE_SKILLS.slice(0, Math.floor(Math.random() * 4) + 1),
       experience: Math.floor(Math.random() * 5),
-      major: randomItem(MAJORS)
+      major: randomItem(MAJORS),
+      // Placeholder for job offers - will be implemented properly later
+      jobOffers: 0 // 0 job offer
     };
   }
 

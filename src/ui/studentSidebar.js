@@ -6,7 +6,11 @@ export class StudentSidebar {
     this.gameGrid = gameGrid;
     this.sidebar = null;
     this.studentsContainer = null;
+    this.toggleButton = null;
     this.isInitialized = false;
+    this.isCollapsed = false;
+    this.expandedWidth = '300px';
+    this.collapsedWidth = '50px';
   }
 
   /**
@@ -21,14 +25,79 @@ export class StudentSidebar {
       position: fixed;
       top: 60px;
       left: 0;
-      width: 300px;
+      width: ${this.expandedWidth};
       height: calc(100vh - 60px);
       background: rgba(253, 250, 245, 0.95);
       border-right: 2px solid rgba(139, 113, 85, 0.4);
       backdrop-filter: blur(20px);
       z-index: 50;
+      overflow: visible;
+      transition: width 0.3s ease, padding 0.3s ease;
+      display: flex;
+      flex-direction: column;
+    `;
+
+    // Toggle button - positioned to look inline when expanded, centered when collapsed
+    this.toggleButton = document.createElement('button');
+    this.toggleButton.className = 'sidebar-toggle';
+    this.toggleButton.innerHTML = '<span style="margin-right: 4px;">◀</span>Students'; // Arrow + text
+    this.toggleButton.style.cssText = `
+      width: 85px;
+      height: 28px;
+      border: none;
+      border-radius: 6px;
+      background: rgba(139, 113, 85, 0.2);
+      color: #8b7155;
+      cursor: pointer;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s ease;
+      margin: 0.5rem 1rem 0.75rem auto;
+      padding: 0 6px;
+      font-weight: 500;
+      white-space: nowrap;
+      flex-shrink: 0;
+    `;
+
+    this.toggleButton.addEventListener('mouseenter', () => {
+      this.toggleButton.style.background = 'rgba(139, 113, 85, 0.35)';
+      this.toggleButton.style.color = '#5a4a3a';
+      // Preserve existing transform and add scale
+      const currentTransform = this.toggleButton.style.transform;
+      if (currentTransform.includes('translateX')) {
+        this.toggleButton.style.transform = 'translateX(-50%) scale(1.1)';
+      } else {
+        this.toggleButton.style.transform = 'scale(1.1)';
+      }
+    });
+
+    this.toggleButton.addEventListener('mouseleave', () => {
+      this.toggleButton.style.background = 'rgba(139, 113, 85, 0.2)';
+      this.toggleButton.style.color = '#8b7155';
+      // Preserve existing transform and remove scale
+      const currentTransform = this.toggleButton.style.transform;
+      if (currentTransform.includes('translateX')) {
+        this.toggleButton.style.transform = 'translateX(-50%)';
+      } else {
+        this.toggleButton.style.transform = 'none';
+      }
+    });
+
+    this.toggleButton.addEventListener('click', () => {
+      this.toggle();
+    });
+
+    // Content wrapper for padding control
+    this.contentWrapper = document.createElement('div');
+    this.contentWrapper.className = 'sidebar-content';
+    this.contentWrapper.style.cssText = `
+      padding: 0.5rem 1.5rem 1.5rem;
+      flex: 1;
       overflow-y: auto;
-      padding: 1.5rem;
+      overflow-x: visible;
+      transition: opacity 0.2s ease;
     `;
 
     // Students container
@@ -40,14 +109,16 @@ export class StudentSidebar {
       gap: 1rem;
     `;
 
-    // Assemble sidebar
-    this.sidebar.appendChild(this.studentsContainer);
+    // Assemble sidebar - button stays outside content wrapper but positioned inline when expanded
+    this.sidebar.appendChild(this.toggleButton);
+    this.contentWrapper.appendChild(this.studentsContainer);
+    this.sidebar.appendChild(this.contentWrapper);
 
     // Add to page
     document.body.appendChild(this.sidebar);
 
     // Add left margin to body to account for sidebar
-    document.body.style.marginLeft = '300px';
+    this.updateBodyMargin();
 
     this.isInitialized = true;
     this.updateStudentsList();
@@ -250,6 +321,104 @@ export class StudentSidebar {
   }
 
   /**
+   * Toggle sidebar collapsed state
+   */
+  toggle() {
+    if (this.isCollapsed) {
+      this.expand();
+    } else {
+      this.collapse();
+    }
+  }
+
+  /**
+   * Collapse the sidebar
+   */
+  collapse() {
+    if (this.isCollapsed) return;
+
+    this.isCollapsed = true;
+    this.sidebar.style.width = this.collapsedWidth;
+    this.contentWrapper.style.opacity = '0';
+    this.toggleButton.innerHTML = '▶'; // Right arrow for expand - no text when collapsed
+    
+    // Center the button in the collapsed strip with high z-index to ensure clickability
+    this.toggleButton.style.position = 'absolute';
+    this.toggleButton.style.top = '15px';
+    this.toggleButton.style.left = '50%';
+    this.toggleButton.style.right = 'auto';
+    this.toggleButton.style.transform = 'translateX(-50%)';
+    this.toggleButton.style.width = '32px';
+    this.toggleButton.style.minWidth = '32px';
+    this.toggleButton.style.height = '32px';
+    this.toggleButton.style.borderRadius = '8px';
+    this.toggleButton.style.margin = '0';
+    this.toggleButton.style.padding = '0';
+    this.toggleButton.style.zIndex = '100';
+    this.toggleButton.style.pointerEvents = 'auto';
+    
+    // Update body margin
+    this.updateBodyMargin();
+
+    // Notify game grid of sidebar state change
+    if (this.gameGrid && this.gameGrid.handleSidebarToggle) {
+      this.gameGrid.handleSidebarToggle();
+    }
+  }
+
+  /**
+   * Expand the sidebar
+   */
+  expand() {
+    if (!this.isCollapsed) return;
+
+    this.isCollapsed = false;
+    this.sidebar.style.width = this.expandedWidth;
+    this.contentWrapper.style.opacity = '1';
+    this.toggleButton.innerHTML = '<span style="margin-right: 4px;">◀</span>Students'; // Left arrow for collapse
+    
+    // Restore inline-like positioning (but still positioned for visibility)
+    this.toggleButton.style.position = 'static';
+    this.toggleButton.style.top = 'auto';
+    this.toggleButton.style.left = 'auto';
+    this.toggleButton.style.right = 'auto';
+    this.toggleButton.style.transform = 'none';
+    this.toggleButton.style.width = '85px';
+    this.toggleButton.style.minWidth = '85px';
+    this.toggleButton.style.height = '28px';
+    this.toggleButton.style.borderRadius = '6px';
+    this.toggleButton.style.margin = '0.5rem 1rem 0.75rem auto';
+    this.toggleButton.style.padding = '0 6px';
+    this.toggleButton.style.justifyContent = 'center';
+    this.toggleButton.style.flexShrink = '0';
+    this.toggleButton.style.zIndex = 'auto';
+    this.toggleButton.style.pointerEvents = 'auto';
+    
+    // Update body margin
+    this.updateBodyMargin();
+
+    // Notify game grid of sidebar state change
+    if (this.gameGrid && this.gameGrid.handleSidebarToggle) {
+      this.gameGrid.handleSidebarToggle();
+    }
+  }
+
+  /**
+   * Update body margin based on sidebar state
+   */
+  updateBodyMargin() {
+    const marginValue = this.isCollapsed ? '50px' : '300px';
+    document.body.style.marginLeft = marginValue;
+  }
+
+  /**
+   * Check if sidebar is collapsed
+   */
+  isCollapsedState() {
+    return this.isCollapsed;
+  }
+
+  /**
    * Refresh the sidebar (called when students change)
    */
   refresh() {
@@ -269,6 +438,8 @@ export class StudentSidebar {
 
     this.sidebar = null;
     this.studentsContainer = null;
+    this.toggleButton = null;
+    this.contentWrapper = null;
     this.isInitialized = false;
   }
 }

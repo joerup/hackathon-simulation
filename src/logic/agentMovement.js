@@ -29,6 +29,11 @@ export function moveAgent(gameState, agent, newX, newY) {
   };
 
   agent.position = [newX, newY];
+  
+  // Track distance traveled (each move counts as 1 unit)
+  if (typeof agent.distanceTraveled === 'number') {
+    agent.distanceTraveled++;
+  }
   return true;
 }
 

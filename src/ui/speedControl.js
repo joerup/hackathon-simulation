@@ -25,12 +25,12 @@ export class SpeedControl {
     this.container.className = 'speed-control';
     this.container.style.cssText = `
       margin: 20px auto 0 auto;
-      background: rgba(8, 10, 24, 0.9);
-      border: 1px solid rgba(96, 112, 238, 0.3);
+      background: rgba(253, 250, 245, 0.95);
+      border: 2px solid rgba(139, 113, 85, 0.4);
       border-radius: 12px;
       padding: 16px 20px;
       backdrop-filter: blur(20px);
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+      box-shadow: 0 8px 24px rgba(139, 113, 85, 0.2);
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -43,7 +43,7 @@ export class SpeedControl {
     // Speed label
     this.speedLabel = document.createElement('span');
     this.speedLabel.style.cssText = `
-      color: #ffffff;
+      color: #5a4a3a;
       font-weight: 600;
       font-size: 1rem;
       text-align: center;
@@ -67,8 +67,8 @@ export class SpeedControl {
       position: relative;
       width: 100%;
       height: 8px;
-      background: rgba(12, 16, 40, 0.8);
-      border: 1px solid rgba(96, 112, 238, 0.3);
+      background: rgba(250, 247, 240, 0.9);
+      border: 1px solid rgba(139, 113, 85, 0.3);
       border-radius: 4px;
       cursor: pointer;
     `;
@@ -80,7 +80,7 @@ export class SpeedControl {
       top: 0;
       left: 0;
       height: 100%;
-      background: linear-gradient(90deg, #7088ff, #9d66ff);
+      background: linear-gradient(90deg, #d4a574, #c1955f);
       border-radius: 4px;
       transition: width 0.2s ease;
     `;
@@ -93,11 +93,11 @@ export class SpeedControl {
       width: 20px;
       height: 20px;
       background: #ffffff;
-      border: 3px solid #7088ff;
+      border: 3px solid #8b7155;
       border-radius: 50%;
       transform: translate(-50%, -50%);
       cursor: grab;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+      box-shadow: 0 2px 8px rgba(139, 113, 85, 0.25);
       transition: all 0.2s ease;
       z-index: 2;
     `;
@@ -130,7 +130,7 @@ export class SpeedControl {
       tick.style.cssText = `
         width: 2px;
         height: 8px;
-        background: rgba(255, 255, 255, 0.4);
+        background: rgba(90, 74, 58, 0.4);
         border-radius: 1px;
       `;
       
@@ -138,7 +138,7 @@ export class SpeedControl {
       label.textContent = gameSpeedConfig.speeds[speedIndex].label;
       label.style.cssText = `
         font-size: 0.7rem;
-        color: rgba(255, 255, 255, 0.6);
+        color: rgba(90, 74, 58, 0.7);
         white-space: nowrap;
       `;
 
@@ -162,7 +162,7 @@ export class SpeedControl {
     const instructions = document.createElement('span');
     instructions.textContent = 'Drag or click to adjust speed';
     instructions.style.cssText = `
-      color: rgba(255, 255, 255, 0.6);
+      color: rgba(90, 74, 58, 0.7);
       font-size: 0.75rem;
       font-style: italic;
     `;
@@ -218,14 +218,14 @@ export class SpeedControl {
     this.sliderHandle.addEventListener('mouseenter', () => {
       if (!this.isDragging) {
         this.sliderHandle.style.transform = 'translate(-50%, -50%) scale(1.1)';
-        this.sliderHandle.style.boxShadow = '0 4px 12px rgba(112, 136, 255, 0.4)';
+        this.sliderHandle.style.boxShadow = '0 4px 12px rgba(139, 113, 85, 0.35)';
       }
     });
 
     this.sliderHandle.addEventListener('mouseleave', () => {
       if (!this.isDragging) {
         this.sliderHandle.style.transform = 'translate(-50%, -50%) scale(1)';
-        this.sliderHandle.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.3)';
+        this.sliderHandle.style.boxShadow = '0 2px 8px rgba(139, 113, 85, 0.25)';
       }
     });
   }

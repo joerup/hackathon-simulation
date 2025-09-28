@@ -77,11 +77,17 @@ export class GridRenderer {
     const viewportWidth = window.innerWidth;
     const viewportHeight = window.innerHeight;
 
-    // Account for header (60px), padding (4rem = 64px), speed control (~120px), and margins
-    const reservedWidth = Math.max(120, viewportWidth * 0.1); // At least 120px margin
+    // Get current body margins to account for sidebar states
+    const computedStyle = window.getComputedStyle(document.body);
+    const leftMargin = parseInt(computedStyle.marginLeft) || 0;
+    const rightMargin = parseInt(computedStyle.marginRight) || 0;
+
+    // Account for header (60px), padding (4rem = 64px), speed control (~120px), and extra margins
+    const reservedWidth = 40; // Additional padding/margins around content
     const reservedHeight = 60 + 64 + 120 + 40; // Header + padding + speed control + margin
 
-    const availableWidth = viewportWidth - reservedWidth;
+    // Calculate available space considering dynamic sidebar margins
+    const availableWidth = viewportWidth - leftMargin - rightMargin - reservedWidth;
     const availableHeight = viewportHeight - reservedHeight;
 
     // Calculate max cell size that fits in both dimensions

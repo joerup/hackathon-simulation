@@ -85,17 +85,21 @@ export class GameState {
 
     // Use provided ID or assign next sequential ID starting from 1
     const agentId = id !== null ? id : this.nextAgentId++;
+    const stats = generateAgentStats(isStudent);
 
     const agent = {
       id: agentId,
       isStudent: isStudent,
-      stats: generateAgentStats(isStudent),
+      stats: stats,
       appearance: generateAgentAppearance(isStudent),
       position: [x, y],
       inConversation: false,
       conversationPartner: null,
       conversationId: null,
       lastConvoCooldown: 0, // Cooldown timer for conversation engagement
+      distanceTraveled: 0, // Track total distance moved
+      recruitersSpokenTo: isStudent ? 0 : null, // Only track for students
+      jobOffers: isStudent ? stats.jobOffers : null, // Placeholder for job offers (students only)
       get x() { return this.position[0]; },
       get y() { return this.position[1]; },
       set x(value) { this.position[0] = value; },
@@ -220,6 +224,9 @@ export class GameState {
         conversationPartner: agent.conversationPartner,
         conversationId: agent.conversationId,
         lastConvoCooldown: agent.lastConvoCooldown,
+        distanceTraveled: agent.distanceTraveled,
+        recruitersSpokenTo: agent.recruitersSpokenTo,
+        jobOffers: agent.jobOffers,
         stats: { ...agent.stats },
         appearance: { ...agent.appearance }
       })),
