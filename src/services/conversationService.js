@@ -7,14 +7,6 @@ import { chatBubble } from "../ui/chatBubble.js";
 export class ConversationService {
   constructor() {
     this.activeConversations = new Map(); // Map<conversationId, conversationData>
-    this.chatSidebar = null; // Reference to chat sidebar for displaying messages
-  }
-
-  /**
-   * Set the chat sidebar reference
-   */
-  setChatSidebar(chatSidebar) {
-    this.chatSidebar = chatSidebar;
   }
 
   /**
@@ -508,5 +500,14 @@ TALKING TO: ${otherAgent.stats.name} (${otherAgent.isStudent ? otherAgent.stats.
   isConversationComplete(conversationId) {
     const conversation = this.activeConversations.get(conversationId);
     return conversation ? conversation.isComplete : false;
+  }
+
+  /**
+   * Get conversation data by ID
+   * @param {string} conversationId - Conversation ID
+   * @returns {Object|null} Conversation data or null
+   */
+  getConversationData(conversationId) {
+    return this.activeConversations.get(conversationId) || null;
   }
 }

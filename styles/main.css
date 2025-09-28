@@ -262,7 +262,7 @@ button:disabled {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   min-height: calc(100vh - 60px);
   box-sizing: border-box;
 }
@@ -683,7 +683,6 @@ button:disabled {
 
   /* Mobile responsive speed control */
   .speed-control {
-    bottom: 15px !important;
     padding: 12px 16px !important;
     font-size: 0.8rem !important;
     min-width: 280px !important;
@@ -698,6 +697,60 @@ button:disabled {
     padding: 12px 16px !important;
     max-width: 350px !important;
     width: 90% !important;
+  }
+}
+
+/* Leaderboard Sidebar Styles */
+.leaderboard-sidebar {
+  font-family: "Inter", Arial, sans-serif;
+}
+
+.leaderboard-sidebar .sidebar-toggle:hover {
+  background: rgba(139, 113, 85, 0.35) !important;
+  color: #5a4a3a !important;
+}
+
+.leaderboard-sidebar .leaderboard-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.leaderboard-sidebar .leaderboard-content::-webkit-scrollbar-track {
+  background: rgba(253, 250, 245, 0.7);
+  border-radius: 4px;
+}
+
+.leaderboard-sidebar .leaderboard-content::-webkit-scrollbar-thumb {
+  background: rgba(139, 113, 85, 0.4);
+  border-radius: 4px;
+}
+
+.leaderboard-sidebar .leaderboard-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(139, 113, 85, 0.6);
+}
+
+@media (max-width: 680px) {
+  .leaderboard-sidebar {
+    width: 320px !important;
+  }
+  
+  .leaderboard-sidebar .sidebar-content {
+    padding: 0.4rem 0.8rem 0.8rem !important;
+  }
+  
+  body[style*="margin-right: 400px"] {
+    margin-right: 320px !important;
+  }
+  
+  body[style*="margin-right: 50px"] {
+    margin-right: 40px !important;
+  }
+
+  .leaderboard-sidebar .leaderboard-content {
+    font-size: 0.7rem !important;
+  }
+
+  .leaderboard-sidebar h2 {
+    font-size: 1.1rem !important;
   }
 }
 

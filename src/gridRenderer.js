@@ -16,7 +16,7 @@ export class GridRenderer {
    * Initialize the renderer and create the visual grid
    */
   initialize() {
-    if (this.isInitialized) return;
+    if (this.isInitialized) return this.container;
 
     this.container = document.createElement('div');
     this.container.className = 'game-grid-container';

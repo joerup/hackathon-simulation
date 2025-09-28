@@ -24,7 +24,20 @@ const BUZZWORDS = [
   "observability"
 ];
 
-const COMPANIES = ["Tech Corp", "StartupXYZ", "Big Tech Inc", "Innovation Labs"];
+const COMPANIES = [
+  "Jane Street", "Google", "Netflix", "Stripe", "Airbnb", 
+  "Facebook", "Amazon", "Apple", "Microsoft", "Tesla",
+  "Uber", "Lyft", "Palantir", "Databricks", "OpenAI",
+  "Consulting", "Startup", "Tech Corp", "StartupXYZ", "Big Tech Inc", "Innovation Labs"
+];
+
+const PREVIOUS_COMPANIES = [
+  "Jane Street", "Citadel", "Two Sigma", "D.E. Shaw", "Goldman Sachs",
+  "Google", "Facebook", "Amazon", "Microsoft", "Apple", 
+  "Netflix", "Uber", "Airbnb", "Stripe", "Palantir",
+  "Local Startup", "Consulting Firm", "Research Lab"
+];
+
 const POSITIONS = ["Software Engineer", "Frontend Developer", "Backend Developer", "Full Stack Developer"];
 const PREFERENCES = [
   "Looking for candidates with strong problem-solving skills",
@@ -69,6 +82,9 @@ function buildStudentStats() {
     score: randomInt(55, 95)
   }));
 
+  const internshipCount = randomInt(0, 3);
+  const previousCompanies = internshipCount > 0 ? pickSubset(PREVIOUS_COMPANIES, Math.min(internshipCount, 2)) : [];
+
   return {
     name: buildFullName(STUDENT_FIRST_NAMES, STUDENT_LAST_NAMES),
     gpa: Number((Math.random() * 1.2 + 2.6).toFixed(2)),
@@ -79,11 +95,14 @@ function buildStudentStats() {
     networking: randomInt(0, 5),
     energyScore: randomInt(45, 95),
     luck: randomInt(25, 95),
-    internships: randomInt(0, 3),
+    internships: internshipCount,
+    previousCompanies: previousCompanies,
     buzzwords: pickSubset(BUZZWORDS, randomInt(1, 3)),
     summary: randomItem(STUDENT_SUMMARIES),
     fillerRatio: Number((Math.random() * 0.45).toFixed(2)),
-    jobOffers: 0
+    jobOffers: 0,
+    interactionHistory: [], // Track all interactions with scores
+    totalInteractionScore: 0 // Sum of all interaction scores
   };
 }
 
@@ -98,7 +117,16 @@ function buildRecruiterStats() {
       company: randomItem(COMPANIES),
       role: randomItem(POSITIONS),
       preferences: randomItem(PREFERENCES)
-    }
+    },
+    // Personality preferences are generated dynamically in interactionScoring.js
+    // based on company culture, but we can store base preferences here
+    personalityPreferences: {
+      genuine: Number((Math.random() * 0.4 + 0.6).toFixed(2)), // 0.6-1.0
+      snarky: Number((Math.random() * 0.6 + 0.2).toFixed(2)),  // 0.2-0.8
+      professional: Number((Math.random() * 0.3 + 0.7).toFixed(2)), // 0.7-1.0
+      casual: Number((Math.random() * 0.5 + 0.3).toFixed(2))   // 0.3-0.8
+    },
+    viewRadius: randomInt(2, 4) // How far the recruiter can "see" for networking score
   };
 }
 

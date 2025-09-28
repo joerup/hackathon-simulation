@@ -1,7 +1,7 @@
 import { GameState } from '../gameState.js';
 import { GridRenderer } from '../gridRenderer.js';
 import { getCurrentSpeed } from '../config.js';
-import { createSpeedControl } from './speedControl.js';
+import { SpeedControl } from './speedControl.js';
 
 /**
  * GameGrid class - Coordinates between game state and rendering
@@ -13,19 +13,35 @@ export class GameGrid {
     this.renderer = new GridRenderer(this.gameState);
     this.animationId = null;
     this.isRunning = false;
-    this.chatSidebar = null; // Reference to chat sidebar
+    this.leaderboardSidebar = null; // Reference to leaderboard sidebar
     this.speedControl = null;
+    
+    // Initialize the renderer
+    this.renderer.initialize();
     
     // Initialize the game with sample data
     this.initializeGame();
   }
 
   /**
-   * Set the chat sidebar reference
+   * Set the leaderboard sidebar reference
    */
-  setChatSidebar(chatSidebar) {
-    this.chatSidebar = chatSidebar;
-    this.gameState.setChatSidebar(chatSidebar);
+  setLeaderboardSidebar(leaderboardSidebar) {
+    this.leaderboardSidebar = leaderboardSidebar;
+    // Setup periodic leaderboard updates
+    this.setupLeaderboardUpdates(leaderboardSidebar);
+  }
+
+  /**
+   * Setup periodic leaderboard updates
+   */
+  setupLeaderboardUpdates(leaderboardSidebar) {
+    // Update leaderboard every 1 second when simulation is running for more responsive distance tracking
+    setInterval(() => {
+      if (this.isRunning && leaderboardSidebar && !leaderboardSidebar.isCollapsedState()) {
+        leaderboardSidebar.refresh();
+      }
+    }, 1000);
   }
 
   /**
@@ -87,8 +103,12 @@ export class GameGrid {
   render() {
     const container = this.renderer.initialize();
     
-    // Create and add speed control wheel directly to the container
-    this.speedControl = createSpeedControl(this, container);
+    // Create speed control but don't append it yet
+    this.speedControl = new SpeedControl(this);
+    const speedControlElement = this.speedControl.create();
+    
+    // Append speed control after the grid element
+    container.appendChild(speedControlElement);
     
     return container;
   }

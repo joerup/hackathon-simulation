@@ -33,7 +33,13 @@ export function moveAgent(gameState, agent, newX, newY) {
   // Track distance traveled (each move counts as 1 unit)
   if (typeof agent.distanceTraveled === 'number') {
     agent.distanceTraveled++;
+  } else {
+    agent.distanceTraveled = 1; // Initialize if not set
   }
+  
+  // Debug logging for movement (uncomment to debug)
+  // console.log(`${agent.stats?.name || `Agent ${agent.id}`} moved to (${newX}, ${newY}), distance: ${agent.distanceTraveled}`);
+  
   return true;
 }
 

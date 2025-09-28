@@ -64,8 +64,9 @@ export class LeaderboardModal {
     // Header
     const thead = this.createElement('thead', `background:${S.highlightHover}`);
     const headerRow = document.createElement('tr');
-    ['Rank', 'Name', 'Job Offers', 'Recruiters Talked To', 'Distance Traveled'].forEach((text, i) => {
-      const th = this.createElement('th', `padding:0.75rem;border-bottom:2px solid ${S.border};text-align:${i === 0 ? 'left' : 'center'};font-weight:600;color:${S.primary};font-size:0.9rem${i === 2 ? ';background:' + S.highlight : ''}`, text);
+    ['Rank', 'Name', 'Job Offers', 'Avg Score', 'Total Score', 'Interactions'].forEach((text, i) => {
+      const isHighlight = i === 2; // Highlight job offers column
+      const th = this.createElement('th', `padding:0.5rem;border-bottom:2px solid ${S.border};text-align:${i === 0 ? 'left' : 'center'};font-weight:600;color:${S.primary};font-size:0.85rem${isHighlight ? ';background:' + S.highlight : ''}`, text);
       headerRow.appendChild(th);
     });
     thead.appendChild(headerRow);
@@ -75,7 +76,7 @@ export class LeaderboardModal {
     if (students.length === 0) {
       const row = document.createElement('tr');
       const cell = this.createElement('td', `padding:2rem;border-bottom:1px solid ${S.borderLight};text-align:center;font-style:italic;color:${S.accent}`, 'No students found. Add some students to see the leaderboard!');
-      cell.colSpan = 5;
+      cell.colSpan = 6;
       row.appendChild(cell);
       tbody.appendChild(row);
     } else {
@@ -90,9 +91,10 @@ export class LeaderboardModal {
         [
           [rankText, `padding:0.75rem;border-bottom:1px solid ${S.borderLight};font-weight:700;color:${S.primaryDark};width:60px`],
           [student.name || `Student ${student.id}`, `padding:0.75rem;border-bottom:1px solid ${S.borderLight};font-weight:700;color:${S.primary}`],
-          [student.jobOffers || 0, `padding:0.75rem;border-bottom:1px solid ${S.borderLight};text-align:center;font-weight:700;color:${S.secondary}`],
-          [student.recruitersSpokenTo || 0, `padding:0.75rem;border-bottom:1px solid ${S.borderLight};text-align:center;font-weight:500;color:${S.primary}`],
-          [student.distanceTraveled || 0, `padding:0.75rem;border-bottom:1px solid ${S.borderLight};text-align:center;font-weight:500;color:${S.primary}`]
+          [student.stats?.jobOffers || student.jobOffers || 0, `padding:0.5rem;border-bottom:1px solid ${S.borderLight};text-align:center;font-weight:700;color:${S.secondary}`],
+          [student.calculatedAvgScore ? student.calculatedAvgScore.toFixed(1) : '0.0', `padding:0.5rem;border-bottom:1px solid ${S.borderLight};text-align:center;font-weight:600;color:${S.accent}`],
+          [student.calculatedTotalScore ? student.calculatedTotalScore.toFixed(0) : '0', `padding:0.5rem;border-bottom:1px solid ${S.borderLight};text-align:center;font-weight:500;color:${S.primary}`],
+          [student.calculatedInteractionCount || 0, `padding:0.5rem;border-bottom:1px solid ${S.borderLight};text-align:center;font-weight:500;color:${S.primary}`]
         ].forEach(([text, css]) => {
           const td = this.createElement('td', css, text);
           row.appendChild(td);
@@ -377,17 +379,49 @@ export class LeaderboardModal {
   /**
    * Get student data sorted by priority:
    * 1. Job Offers (primary - most important)
-   * 2. Recruiters Talked To (secondary)  
-   * 3. Distance Traveled (tertiary - tie-breaker)
+   * 2. Total Interaction Score (secondary - sum of all interaction scores)
+   * 3. Average Interaction Score (tertiary - quality of interactions)
+   * 4. Recruiters Talked To (quaternary)  
+   * 5. Distance Traveled (tie-breaker)
    */
   getStudentData() {
     if (!this.gameGrid) return [];
     const gameState = this.gameGrid.getGameState();
-    return gameState.agents.filter(agent => agent.isStudent).sort((a, b) => {
-      const aJobs = a.jobOffers || 0, bJobs = b.jobOffers || 0;
+    
+    return gameState.agents.filter(agent => agent.isStudent).map(agent => {
+      // Calculate interaction metrics
+      const totalScore = agent.stats?.totalInteractionScore || 0;
+      const interactionCount = agent.stats?.interactionHistory?.length || 0;
+      const avgScore = interactionCount > 0 ? totalScore / interactionCount : 0;
+      
+      return {
+        ...agent,
+        calculatedTotalScore: totalScore,
+        calculatedAvgScore: avgScore,
+        calculatedInteractionCount: interactionCount
+      };
+    }).sort((a, b) => {
+      // Primary: Job Offers
+      const aJobs = a.stats?.jobOffers || a.jobOffers || 0;
+      const bJobs = b.stats?.jobOffers || b.jobOffers || 0;
       if (aJobs !== bJobs) return bJobs - aJobs;
-      const aRec = a.recruitersSpokenTo || 0, bRec = b.recruitersSpokenTo || 0;
+      
+      // Secondary: Total Interaction Score
+      if (a.calculatedTotalScore !== b.calculatedTotalScore) {
+        return b.calculatedTotalScore - a.calculatedTotalScore;
+      }
+      
+      // Tertiary: Average Interaction Score
+      if (a.calculatedAvgScore !== b.calculatedAvgScore) {
+        return b.calculatedAvgScore - a.calculatedAvgScore;
+      }
+      
+      // Quaternary: Recruiters Talked To
+      const aRec = a.recruitersSpokenTo || 0;
+      const bRec = b.recruitersSpokenTo || 0;
       if (aRec !== bRec) return bRec - aRec;
+      
+      // Tie-breaker: Distance Traveled
       return (b.distanceTraveled || 0) - (a.distanceTraveled || 0);
     });
   }
@@ -418,7 +452,7 @@ export class LeaderboardModal {
     
     const thead = this.createElement('thead', `background:${S.highlightHover}`);
     const headerRow = document.createElement('tr');
-    ['Rank', 'Name', 'Job Offers', 'Recruiters Talked To', 'Distance Traveled'].forEach((text, i) => {
+    ['Rank', 'Name', 'Job Offers', 'Avg Score', 'Total Score', 'Interactions'].forEach((text, i) => {
       const th = this.createElement('th', `padding:0.75rem;border-bottom:2px solid ${S.border};text-align:${i === 0 ? 'left' : 'center'};font-weight:600;color:${S.primary};font-size:0.9rem${i === 2 ? ';background:' + S.highlight : ''}`, text);
       headerRow.appendChild(th);
     });
@@ -428,7 +462,7 @@ export class LeaderboardModal {
     if (students.length === 0) {
       const row = document.createElement('tr');
       const cell = this.createElement('td', `padding:2rem;border-bottom:1px solid ${S.borderLight};text-align:center;font-style:italic;color:${S.accent}`, 'No students found. Add some students to see the leaderboard!');
-      cell.colSpan = 5;
+      cell.colSpan = 6;
       row.appendChild(cell);
       tbody.appendChild(row);
     } else {
@@ -443,9 +477,10 @@ export class LeaderboardModal {
         [
           [rankText, `padding:0.75rem;border-bottom:1px solid ${S.borderLight};font-weight:700;color:${S.primaryDark};width:60px`],
           [student.name || `Student ${student.id}`, `padding:0.75rem;border-bottom:1px solid ${S.borderLight};font-weight:700;color:${S.primary}`],
-          [student.jobOffers || 0, `padding:0.75rem;border-bottom:1px solid ${S.borderLight};text-align:center;font-weight:700;color:${S.secondary}`],
-          [student.recruitersSpokenTo || 0, `padding:0.75rem;border-bottom:1px solid ${S.borderLight};text-align:center;font-weight:500;color:${S.primary}`],
-          [student.distanceTraveled || 0, `padding:0.75rem;border-bottom:1px solid ${S.borderLight};text-align:center;font-weight:500;color:${S.primary}`]
+          [student.stats?.jobOffers || student.jobOffers || 0, `padding:0.5rem;border-bottom:1px solid ${S.borderLight};text-align:center;font-weight:700;color:${S.secondary}`],
+          [student.calculatedAvgScore ? student.calculatedAvgScore.toFixed(1) : '0.0', `padding:0.5rem;border-bottom:1px solid ${S.borderLight};text-align:center;font-weight:600;color:${S.accent}`],
+          [student.calculatedTotalScore ? student.calculatedTotalScore.toFixed(0) : '0', `padding:0.5rem;border-bottom:1px solid ${S.borderLight};text-align:center;font-weight:500;color:${S.primary}`],
+          [student.calculatedInteractionCount || 0, `padding:0.5rem;border-bottom:1px solid ${S.borderLight};text-align:center;font-weight:500;color:${S.primary}`]
         ].forEach(([text, css]) => {
           const td = this.createElement('td', css, text);
           row.appendChild(td);
