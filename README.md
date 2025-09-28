@@ -1,97 +1,96 @@
-# LinkedOut
+# LinkedOut – BlockArena
 
-**LinkedOut** is a satirical Qualcomm Snapdragon Multiverse hackathon project: a simulation of a modern-day job hunting arena. Just upload your resume, and watch your character struggle, network, or succeed in the job market, and then receive tips on how to improve your own resume by seeing who succeeds.
+LinkedOut – BlockArena is a tongue‑in‑cheek hackathon simulation of the modern job hunt. Add student avatars backed by resume‑derived attributes, watch them mingle with recruiters on a grid, and see who lands offers. With Qualcomm Imagine API LLM integration, resumes can be analyzed into gameplay stats and agents can hold short, realistic networking chats.
 
----
+## Application Description
 
-## Features
+- Simulation game rendered in an Electron app (HTML/CSS/JS).
+- Students and recruiters move on a 10×10 grid, meet, and converse.
+- Resume uploads (or samples) generate stats that influence outcomes.
+- Qualcomm Imagine API LLM integration powers resume parsing and chat.
 
----
+## Team (Eligible Individuals)
 
-## Architecture
+- Hao Teng - hteng@princeton.edu
+- Joseph Rupertus - joerup@princeton.edu
+- Christina Nikolova - cn8979@princeton.edu
+- Jorrel Rajan - jorrel@princeton.edu
 
-* **Frontend**: HTML5 Canvas for visualization
-* **Logic**: Agent stats and behaviors are driven by resume analysis
-* **LLM Integration**: Snapdragon-powered APIs assign traits from resume text and simulate conversations between different agents (types: Recruiters, Students)
+## Prerequisites
 
----
+- Node.js 18+ and npm
+- OS: Windows, macOS, or Linux
+- Qualcomm Imagine API credentials via Cirrascale for LLM features
 
-## LLM Integration
+## Setup (From Scratch)
 
-### Resume Parsing
-Resumes are parsed, normalized, and mapped to stats like:
+1) Clone the repository
 
-* **Experience** (work history, projects)
-* **Skills** (keywords such as Python, Excel, ML)
-* **Networking** (clubs, leadership, hackathons)
-* **Energy** (resume fluff vs. focus)
-* **Luck** (random element, because job hunting needs it)
+```bash
+git clone https://github.com/joerup/hackathon-simulation.git
+cd hackathon-simulation
+```
 
-See [`src/services/snapdragonClient.js`](src/services/snapdragonClient.js) for the resume API client.
+2) Install dependencies
 
-### Agent Conversations
-Different agents converse with each other. The students' goal is to receive as many job offers as possible. There can be student-recruiter, student-student, and recruiter-recruiter interactions.
+```bash
+npm install
+```
 
-See [`src/services/conversationService.js`](src/services/conversationService.js) for agent conversation API client.
+3) Configure environment (optional but recommended for LLM features)
 
----
+Create a file named `.env` in the project root with:
 
-## File Structure
+```env
+SNAPDRAGON_API_KEY=your_api_key_here
+SNAPDRAGON_API_URL=https://aisuite.cirrascale.com/apis/v2/chat/completions
+SNAPDRAGON_MODEL=Llama-3.3-70B
+```
 
-* `src/services/` → Snapdragon client and API helpers
-* `src/ui/` → Canvas drawing code (retro + South-Park sprites)
-* `src/utils/` → Resume parsing helpers
-* `src/` root → State classes (`GameState`, `ConversationState`)
+Notes:
 
----
+- Do not commit your real API key.
+- Without an API key: resume stats will fall back to placeholders; LLM conversations may be disabled.
 
-## Setup
+## Run & Usage
 
-1. Clone the repo:
+Run locally (launches Electron):
 
-   ```bash
-   git clone https://github.com/joerup/hackathon-simulation.git
-   cd hackathon-simulation
-   ```
-2. Install dependencies:
+```bash
+npm start
+```
 
-   ```bash
-   npm install
-   ```
-3. Add your Snapdragon credentials in `.env`:
+In the app:
 
-   ```env
-   SNAPDRAGON_API_KEY=your_key_here
-   SNAPDRAGON_API_URL=https://aisuite.cirrascale.com/apis/v2/chat/completions
-   SNAPDRAGON_MODEL=Llama-3.1-8B
-   ```
-4. Run locally:
+- Header: click "Add Student" to add a new avatar.
+  - Choose "Upload Resume" (PDF/DOCX/TXT) or pick a sample resume.
+  - With a valid API key, resumes are analyzed by the Snapdragon LLM.
+  - Without a key, placeholder stats are used.
+- Simulation: starts automatically. Agents walk the grid, meet, and (with LLM enabled) exchange brief messages shown as chat bubbles.
+- Left sidebar: Student list with key stats; collapsible.
+- Right sidebar: Live leaderboard of distance traveled and activity; collapsible.
+- Speed control: Adjusts simulation tick speed.
 
-   ```bash
-   npm start
-   ```
+## Dependencies
 
----
+- Dev/runtime shell: Electron (via `npm start`)
+- In‑app: PDF.js via CDN for PDF parsing
 
-## How It Works
+See `package.json` for exact versions.
 
-1. User uploads a resume (text or file).
-2. Resume is analyzed and stats are assigned.
-3. An avatar is generated.
-4. The avatar is placed in the arena to auto-compete for offers.
-5. The simulation shows winners, losers, and ghosted candidates in a leaderboard.
+## Code Overview
 
----
-
-## Creators
-- Hao Teng (hteng@princeton.edu)
-- Joseph Rupertus (joerup@princeton.edu)
-- Christina Nikolova (cn8979@princeton.edu)
-- Jorrel Rajan (jorrel@princeton.edu)
+- Electron entry: `main.js` loads `.env` and opens `index.html`.
+- App bootstrap: `src/app.js` wires the header, grid, and sidebars.
+- Game state: `src/gameState.js` manages grid cells, agents, movement, and conversations; `src/conversationState.js` tracks conversation state.
+- Rendering: `src/gridRenderer.js` draws the grid and agents; responsive sizing and chat bubble placement.
+- Generators: `src/generators/agentStats.js`, `agentAppearance.js`, `obstacles.js` create agent attributes and obstacles.
+- Logic: `src/logic/agentMovement.js` and `conversationManager.js` handle movement and meeting rules.
+- Services: `src/services/snapdragonClient.js` (resume → stats), `src/services/conversationService.js` (LLM chat turns).
+- UI components: `src/ui/header.js`, `modal.js` (Add Student, upload/sample), `studentSidebar.js`, `leaderboardSidebar.js`, `chatBubble.js`, `speedControl.js`.
+- Utils: `src/utils/fileProcessor.js`, `pdfProcessor.js`, `gridUtils.js`, `random.js`, `domUtils.js`.
 
 ## License
 
 This project is licensed under the **GNU General Public License (GPL) 3.0**.
 See the [LICENSE](LICENSE) file for details.
-
----
