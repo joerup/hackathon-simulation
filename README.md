@@ -76,7 +76,42 @@ In the app:
 - Dev/runtime shell: Electron (via `npm start`)
 - In‑app: PDF.js via CDN for PDF parsing
 
-See `package.json` for exact versions.
+## Building
+
+To build the application for distribution, use Electron Packager:
+
+### macOS (Apple Silicon)
+
+```bash
+npx @electron/packager . LinkedOut --platform=darwin --arch=arm64 --out=dist --overwrite
+```
+
+### Windows (ARM64)
+
+```bash
+npx @electron/packager . LinkedOut --platform=win32 --arch=arm64 --out=dist --overwrite
+```
+
+### Additional Build Options
+
+You can also add these optional flags for enhanced builds:
+
+- `--icon=assets/icon` - Add a custom icon
+- `--app-bundle-id=com.linkedout.blockarena` - Set bundle identifier
+- `--app-version=1.0.0` - Set application version
+- `--build-version=1.0.0` - Set build version
+- `--asar` - Package app in asar archive
+- `--prune` - Remove devDependencies
+
+Example with additional options:
+
+```bash
+npx @electron/packager . LinkedOut --platform=darwin --arch=arm64 --out=dist --overwrite --asar --prune --app-version=1.0.0
+```
+
+---
+
+## How It Works
 
 ## Code Overview
 
