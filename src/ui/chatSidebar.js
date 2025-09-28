@@ -33,15 +33,14 @@ export class ChatSidebar {
       right: 0;
       width: ${this.expandedWidth};
       height: calc(100vh - 60px);
-      background: rgba(8, 10, 24, 0.95);
-      border-left: 1px solid rgba(255, 255, 255, 0.1);
+      background: rgba(253, 250, 245, 0.95);
+      border-left: 2px solid rgba(139, 113, 85, 0.4);
       backdrop-filter: blur(20px);
       z-index: 50;
       overflow: visible;
-      box-shadow: -2px 0 20px rgba(0, 0, 0, 0.3);
+      transition: width 0.3s ease, padding 0.3s ease;
       display: flex;
       flex-direction: column;
-      transition: width 0.3s ease, padding 0.3s ease;
     `;
 
     // Toggle button - positioned to look inline when expanded, centered when collapsed
@@ -49,28 +48,28 @@ export class ChatSidebar {
     this.toggleButton.className = 'sidebar-toggle';
     this.toggleButton.innerHTML = '<span style="margin-right: 4px;">▶</span>Live Chat'; // Arrow + header text
     this.toggleButton.style.cssText = `
-      width: 95px;
-      height: 24px;
+      width: 85px;
+      height: 28px;
       border: none;
-      border-radius: 4px;
-      background: rgba(96, 112, 238, 0.3);
-      color: #8fa0ff;
+      border-radius: 6px;
+      background: rgba(139, 113, 85, 0.2);
+      color: #8b7155;
       cursor: pointer;
-      font-size: 11px;
+      font-size: 12px;
       display: flex;
       align-items: center;
       justify-content: center;
       transition: all 0.3s ease;
-      margin: 0.5rem 0 0.75rem 1rem;
+      margin: 0.5rem 1rem 0.75rem auto;
       padding: 0 6px;
       font-weight: 500;
       white-space: nowrap;
-      flex-shrink: 0;
+      flex-shrink: 0;  
     `;
 
     this.toggleButton.addEventListener('mouseenter', () => {
-      this.toggleButton.style.background = 'rgba(96, 112, 238, 0.5)';
-      this.toggleButton.style.color = '#ffffff';
+      this.toggleButton.style.background = 'rgba(139, 113, 85, 0.35)';
+      this.toggleButton.style.color = '#5a4a3a';
       // Preserve existing transform and add scale
       const currentTransform = this.toggleButton.style.transform;
       if (currentTransform.includes('translateX')) {
@@ -81,8 +80,8 @@ export class ChatSidebar {
     });
 
     this.toggleButton.addEventListener('mouseleave', () => {
-      this.toggleButton.style.background = 'rgba(96, 112, 238, 0.3)';
-      this.toggleButton.style.color = '#8fa0ff';
+      this.toggleButton.style.background = 'rgba(139, 113, 85, 0.2)';
+      this.toggleButton.style.color = '#8b7155';
       // Preserve existing transform and remove scale
       const currentTransform = this.toggleButton.style.transform;
       if (currentTransform.includes('translateX')) {
@@ -126,7 +125,7 @@ export class ChatSidebar {
 
     // Add scrollbar styling
     this.chatContainer.style.scrollbarWidth = 'thin';
-    this.chatContainer.style.scrollbarColor = 'rgba(96, 112, 238, 0.3) transparent';
+    this.chatContainer.style.scrollbarColor = 'rgba(139, 113, 85, 0.5) rgba(253, 250, 245, 0.4)';
 
     // Add webkit scrollbar styling for the main chat container
     if (!document.querySelector('#main-chat-scrollbar-styles')) {
@@ -137,15 +136,15 @@ export class ChatSidebar {
           width: 8px;
         }
         .chat-messages::-webkit-scrollbar-track {
-          background: rgba(8, 10, 24, 0.3);
+          background: rgba(253, 250, 245, 0.7);
           border-radius: 4px;
         }
         .chat-messages::-webkit-scrollbar-thumb {
-          background: rgba(96, 112, 238, 0.4);
+          background: rgba(139, 113, 85, 0.4);
           border-radius: 4px;
         }
         .chat-messages::-webkit-scrollbar-thumb:hover {
-          background: rgba(96, 112, 238, 0.6);
+          background: rgba(139, 113, 85, 0.6);
         }
       `;
       document.head.appendChild(mainScrollbarStyle);
@@ -156,7 +155,7 @@ export class ChatSidebar {
     this.emptyStateMessage.className = 'empty-state-message';
     this.emptyStateMessage.textContent = 'No live messages yet...';
     this.emptyStateMessage.style.cssText = `
-      color: rgba(255, 255, 255, 0.5);
+      color: #8b6f47;
       font-size: 0.9rem;
       font-style: italic;
       text-align: center;
@@ -242,8 +241,8 @@ export class ChatSidebar {
     const messageDiv = document.createElement('div');
     messageDiv.className = 'chat-message';
     messageDiv.style.cssText = `
-      background: rgba(12, 16, 40, 0.6);
-      border: 1px solid rgba(96, 112, 238, 0.2);
+      background: rgba(253, 250, 245, 0.95);
+      border: 1px solid rgba(139, 113, 85, 0.25);
       border-radius: 8px;
       padding: 0.6rem;
       transition: all 0.2s ease;
@@ -296,7 +295,7 @@ export class ChatSidebar {
     speakerName.textContent = `${speaker.isStudent ? 'Student' : 'Recruiter'} ${speaker.id}`;
     speakerName.style.cssText = `
       font-weight: 600;
-      color: #ffffff;
+      color: #3d2f1f;
       font-size: 0.9rem;
     `;
 
@@ -304,7 +303,7 @@ export class ChatSidebar {
     conversationTypeTag.textContent = this.getConversationTypeLabel(conversationType);
     conversationTypeTag.style.cssText = `
       background: ${this.getConversationTypeColor(conversationType)};
-      color: #ffffff;
+      color: #3d2f1f;
       padding: 0.15rem 0.4rem;
       border-radius: 4px;
       font-size: 0.65rem;
@@ -320,7 +319,7 @@ export class ChatSidebar {
     const timeElement = document.createElement('span');
     timeElement.textContent = timestamp ? this.formatTime(timestamp) : this.formatTime(Date.now());
     timeElement.style.cssText = `
-      color: #8fa0ff;
+      color: #8b6f47;
       font-size: 0.75rem;
     `;
 
@@ -331,7 +330,7 @@ export class ChatSidebar {
     const content = document.createElement('div');
     content.textContent = message;
     content.style.cssText = `
-      color: #e4e8ff;
+      color: #5a4a3a;
       font-size: 0.9rem;
       line-height: 1.4;
       word-wrap: break-word;
@@ -343,13 +342,15 @@ export class ChatSidebar {
 
     // Add hover effect
     messageDiv.addEventListener('mouseenter', () => {
-      messageDiv.style.background = 'rgba(12, 16, 40, 0.8)';
-      messageDiv.style.borderColor = 'rgba(96, 112, 238, 0.4)';
+      messageDiv.style.background = 'rgba(253, 250, 245, 1)';
+      messageDiv.style.borderColor = 'rgba(139, 113, 85, 0.4)';
+      messageDiv.style.boxShadow = '0 4px 12px rgba(139, 113, 85, 0.25)';
     });
 
     messageDiv.addEventListener('mouseleave', () => {
-      messageDiv.style.background = 'rgba(12, 16, 40, 0.6)';
-      messageDiv.style.borderColor = 'rgba(96, 112, 238, 0.2)';
+      messageDiv.style.background = 'rgba(253, 250, 245, 0.95)';
+      messageDiv.style.borderColor = 'rgba(139, 113, 85, 0.25)';
+      messageDiv.style.boxShadow = 'none';
     });
 
     return messageDiv;
@@ -377,13 +378,13 @@ export class ChatSidebar {
   getConversationTypeColor(conversationType) {
     switch (conversationType) {
       case 'student-student':
-        return 'rgba(112, 136, 255, 0.3)';
+        return 'rgba(212, 165, 116, 0.35)';
       case 'recruiter-recruiter':
-        return 'rgba(255, 112, 112, 0.3)';
+        return 'rgba(200, 160, 120, 0.35)';
       case 'student-recruiter':
-        return 'rgba(112, 255, 112, 0.3)';
+        return 'rgba(184, 158, 130, 0.35)';
       default:
-        return 'rgba(96, 112, 238, 0.3)';
+        return 'rgba(212, 165, 116, 0.25)';
     }
   }
 
@@ -498,10 +499,10 @@ export class ChatSidebar {
     const container = document.createElement('div');
     container.className = 'conversation-group';
     container.style.cssText = `
-      border: 1px solid rgba(96, 112, 238, 0.2);
+      border: 1px solid rgba(139, 113, 85, 0.3);
       border-radius: 12px;
       overflow: hidden;
-      background: rgba(8, 10, 24, 0.3);
+      background: rgba(253, 250, 245, 0.85);
       transition: all 0.2s ease;
       flex-shrink: 0;
     `;
@@ -511,7 +512,7 @@ export class ChatSidebar {
     header.className = 'conversation-header';
     header.style.cssText = `
       padding: 0.75rem;
-      background: rgba(96, 112, 238, 0.1);
+      background: rgba(139, 113, 85, 0.12);
       cursor: pointer;
       display: flex;
       align-items: center;
@@ -540,7 +541,7 @@ export class ChatSidebar {
     title.textContent = this.getConversationTypeLabel(conversationType);
     title.style.cssText = `
       font-weight: 600;
-      color: #ffffff;
+      color: #3d2f1f;
       font-size: 0.9rem;
     `;
 
@@ -548,7 +549,7 @@ export class ChatSidebar {
     const messageCount = document.createElement('span');
     messageCount.textContent = '0 messages';
     messageCount.style.cssText = `
-      color: #8fa0ff;
+      color: #8b6f47;
       font-size: 0.8rem;
       margin-left: 0.5rem;
     `;
@@ -561,7 +562,7 @@ export class ChatSidebar {
     const toggleButton = document.createElement('span');
     toggleButton.textContent = '▼';
     toggleButton.style.cssText = `
-      color: #8fa0ff;
+      color: #8b7155;
       font-size: 0.8rem;
       transition: transform 0.2s ease;
     `;
@@ -585,11 +586,11 @@ export class ChatSidebar {
 
     // Add hover effects
     header.addEventListener('mouseenter', () => {
-      header.style.background = 'rgba(96, 112, 238, 0.2)';
+      header.style.background = 'rgba(139, 113, 85, 0.18)';
     });
 
     header.addEventListener('mouseleave', () => {
-      header.style.background = 'rgba(96, 112, 238, 0.1)';
+      header.style.background = 'rgba(139, 113, 85, 0.12)';
     });
 
     // Add click handler for collapse/expand (start collapsed)
