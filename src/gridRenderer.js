@@ -169,7 +169,7 @@ export class GridRenderer {
         this.renderObstacleCell(cell, cellData);
         break;
       case 'agent':
-        this.renderAgentCell(cell, cellData, x, y);
+        this.renderAgentCell(cell, cellData);
         break;
       case 'walkable':
       default:
@@ -190,22 +190,127 @@ export class GridRenderer {
   /**
    * Render an agent cell
    */
-  renderAgentCell(cell, cellData, x, y) {
+  renderAgentCell(cell, cellData) {
     const agent = cellData.agent;
     if (!agent) return;
 
-    if (agent.inConversation) {
-      // Visual indicator for agents in conversation
-      cell.style.backgroundColor = agent.isStudent ? 'rgba(255, 255, 100, 0.9)' : 'rgba(255, 150, 255, 0.9)';
-      cell.style.border = '3px solid rgba(255, 255, 255, 0.8)';
-      cell.style.boxShadow = '0 0 10px rgba(255, 255, 100, 0.5)';
-      cell.textContent = agent.isStudent ? `💬S${agent.id}` : `💬R${agent.id}`;
-    } else {
-      cell.style.backgroundColor = agent.isStudent ? 'rgba(100, 255, 100, 0.8)' : 'rgba(100, 150, 255, 0.8)';
-      cell.style.border = '1px solid rgba(255, 255, 255, 0.1)';
-      cell.textContent = agent.isStudent ? `S${agent.id}` : `R${agent.id}`;
+    cell.innerHTML = '';
+    cell.textContent = '';
+
+    const isStudent = Boolean(agent.isStudent);
+    const inConversation = Boolean(agent.inConversation);
+
+    const baseBackground = isStudent ? 'rgba(255, 255, 255, 0.08)' : 'rgba(169, 196, 255, 0.12)';
+    const convoBackground = isStudent ? 'rgba(255, 236, 170, 0.55)' : 'rgba(220, 205, 255, 0.5)';
+    const baseBorder = isStudent ? '1px solid rgba(255, 255, 255, 0.18)' : '1px solid rgba(170, 195, 255, 0.25)';
+
+    cell.style.backgroundColor = inConversation ? convoBackground : baseBackground;
+    cell.style.border = inConversation ? '2px solid rgba(255, 255, 255, 0.85)' : baseBorder;
+    cell.style.boxShadow = inConversation ? '0 0 12px rgba(255, 245, 200, 0.75)' : '0 1px 3px rgba(0, 0, 0, 0.3)';
+    cell.style.color = '';
+    cell.style.padding = '2px';
+
+    const avatar = this.buildAgentAvatar(agent);
+    if (inConversation) {
+      avatar.classList.add('is-speaking');
     }
-    cell.style.color = '#000';
+
+    cell.appendChild(avatar);
+  }
+
+  buildAgentAvatar(agent) {
+    const appearance = agent.appearance || {};
+    const avatar = document.createElement('div');
+    avatar.className = 'agent-avatar';
+    avatar.dataset.agentId = agent.id;
+
+    if (!agent.isStudent) {
+      avatar.classList.add('is-recruiter');
+    }
+
+    const bodyScale = typeof appearance.bodyScale === 'number' ? appearance.bodyScale : 1;
+    const safeScale = Math.max(0.75, Math.min(bodyScale, 1.35));
+    avatar.style.setProperty('--scale', safeScale.toFixed(2));
+
+    avatar.style.setProperty('--skin', appearance.skinTone || '#f5d0b5');
+    avatar.style.setProperty('--hair', appearance.hairColor || '#3b2a1d');
+    avatar.style.setProperty('--shirt', appearance.shirtColor || (agent.isStudent ? '#8ecae6' : '#6c8ed4'));
+    avatar.style.setProperty('--accent', appearance.accentColor || (agent.isStudent ? '#ffe066' : '#4e6bb1'));
+
+    const hairKey = (appearance.hairStyle || 'short').toLowerCase().replace(/\s+/g, '');
+    const hair = document.createElement('div');
+    hair.className = 'agent-hair';
+    hair.classList.add(hairKey ? `hair-${hairKey}` : 'hair-short');
+    avatar.appendChild(hair);
+
+    const head = document.createElement('div');
+    head.className = 'agent-head';
+    const eyeShape = (appearance.eyeShape || 'round').toLowerCase();
+    head.classList.add(`eyes-${eyeShape}`);
+    avatar.appendChild(head);
+
+    ['left', 'right'].forEach(side => head.appendChild(this.buildEye(side)));
+
+    const mouth = document.createElement('div');
+    mouth.className = 'agent-mouth';
+    if (appearance.mouth === 'smile') {
+      mouth.classList.add('smile');
+    } else if (appearance.mouth === 'open') {
+      mouth.classList.add('open');
+    }
+    head.appendChild(mouth);
+
+    const faceAccessory = this.buildFaceAccessory(appearance.faceAccessory);
+    if (faceAccessory) {
+      head.appendChild(faceAccessory);
+    }
+
+    const body = document.createElement('div');
+    body.className = 'agent-body';
+    avatar.appendChild(body);
+
+    if (appearance.hasAccent) {
+      const accent = document.createElement('div');
+      accent.className = 'agent-accent';
+      body.appendChild(accent);
+    }
+
+    const label = document.createElement('div');
+    label.className = 'agent-label';
+    label.textContent = `${agent.isStudent ? 'S' : 'R'}${agent.id}`;
+    avatar.appendChild(label);
+
+    return avatar;
+  }
+
+  buildEye(side) {
+    const eye = document.createElement('div');
+    eye.className = `agent-eye ${side}`;
+    const pupil = document.createElement('div');
+    pupil.className = 'agent-pupil';
+    eye.appendChild(pupil);
+    return eye;
+  }
+
+  buildFaceAccessory(type) {
+    if (!type || type === 'none') {
+      return null;
+    }
+
+    const accessory = document.createElement('div');
+    accessory.className = `agent-face-accessory ${type}`;
+
+    if (type === 'glasses') {
+      const leftLens = document.createElement('span');
+      leftLens.className = 'lens left';
+      const rightLens = document.createElement('span');
+      rightLens.className = 'lens right';
+      const bridge = document.createElement('span');
+      bridge.className = 'bridge';
+      accessory.append(leftLens, rightLens, bridge);
+    }
+
+    return accessory;
   }
 
   /**
@@ -241,3 +346,4 @@ export class GridRenderer {
     this.gridElement = null;
   }
 }
+

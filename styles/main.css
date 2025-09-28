@@ -289,6 +289,368 @@ button:disabled {
   justify-content: center;
 }
 
+/* Agent avatars */
+.grid-cell {
+  position: relative;
+  overflow: visible;
+}
+
+.grid-cell .agent-avatar {
+  --scale: 1;
+  --skin: #f5d0b5;
+  --hair: #3b2a1d;
+  --shirt: #8ecae6;
+  --accent: rgba(255, 255, 255, 0.65);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  width: calc(24px * var(--scale));
+  height: calc(30px * var(--scale));
+  pointer-events: none;
+  transform-origin: bottom center;
+  gap: calc(2px * var(--scale));
+}
+
+.grid-cell .agent-avatar.is-speaking {
+  animation: agent-bob 0.7s ease-in-out infinite alternate;
+}
+
+@keyframes agent-bob {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-2px);
+  }
+}
+
+.agent-avatar .agent-head {
+  position: relative;
+  z-index: 2;
+  width: calc(18px * var(--scale));
+  height: calc(16px * var(--scale));
+  background: var(--skin);
+  border-radius: 50%;
+  box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.08);
+}
+
+.agent-avatar .agent-head.eyes-oval .agent-eye {
+  width: calc(5.5px * var(--scale));
+  height: calc(4.2px * var(--scale));
+}
+
+.agent-avatar .agent-head.eyes-wide .agent-eye.left {
+  left: calc(3px * var(--scale));
+}
+
+.agent-avatar .agent-head.eyes-wide .agent-eye.right {
+  right: calc(3px * var(--scale));
+}
+
+.agent-avatar .agent-head.eyes-wide .agent-eye {
+  width: calc(5.5px * var(--scale));
+}
+
+.agent-head .agent-eye {
+  position: absolute;
+  top: calc(6px * var(--scale));
+  width: calc(5px * var(--scale));
+  height: calc(5px * var(--scale));
+  background: #ffffff;
+  border-radius: 50%;
+  box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.08);
+}
+
+.agent-head .agent-eye.left {
+  left: calc(4px * var(--scale));
+}
+
+.agent-head .agent-eye.right {
+  right: calc(4px * var(--scale));
+}
+
+.agent-head .agent-pupil {
+  position: absolute;
+  top: 52%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 50%;
+  height: 55%;
+  background: #2d2a3a;
+  border-radius: 50%;
+}
+
+.agent-avatar .agent-mouth {
+  position: absolute;
+  bottom: calc(3px * var(--scale));
+  left: 50%;
+  width: calc(8px * var(--scale));
+  height: calc(2px * var(--scale));
+  transform: translateX(-50%);
+  background: #3f2a20;
+  border-radius: 1px;
+}
+
+.agent-avatar .agent-mouth.smile {
+  border-radius: calc(3px * var(--scale)) calc(3px * var(--scale)) 0 0;
+  height: calc(3px * var(--scale));
+}
+
+.agent-avatar .agent-body {
+  position: relative;
+  z-index: 1;
+  width: calc(20px * var(--scale));
+  height: calc(13px * var(--scale));
+  background: var(--shirt);
+  border-radius: calc(9px * var(--scale)) calc(9px * var(--scale)) calc(5px * var(--scale)) calc(5px * var(--scale));
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.15);
+}
+
+.agent-avatar .agent-body::before,
+.agent-avatar .agent-body::after {
+  content: '';
+  position: absolute;
+  top: calc(3px * var(--scale));
+  width: calc(6px * var(--scale));
+  height: calc(4px * var(--scale));
+  background: var(--shirt);
+  border-radius: calc(3px * var(--scale));
+  box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.1);
+}
+
+.agent-avatar .agent-body::before {
+  left: calc(-3px * var(--scale));
+}
+
+.agent-avatar .agent-body::after {
+  right: calc(-3px * var(--scale));
+}
+
+.agent-avatar .agent-accent {
+  position: absolute;
+  bottom: calc(2px * var(--scale));
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(14px * var(--scale));
+  height: calc(3px * var(--scale));
+  border-radius: calc(2px * var(--scale));
+  background: var(--accent);
+  opacity: 0.8;
+}
+
+.agent-avatar .agent-label {
+  margin-top: calc(1px * var(--scale));
+  padding: 0 calc(3px * var(--scale));
+  font-size: calc(7px * var(--scale));
+  font-weight: 700;
+  color: #121420;
+  background: rgba(255, 255, 255, 0.75);
+  border-radius: calc(6px * var(--scale));
+  line-height: 1.2;
+}
+
+.agent-avatar .agent-hair {
+  position: absolute;
+  z-index: 3;
+  top: calc(-5px * var(--scale));
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(20px * var(--scale));
+  height: calc(12px * var(--scale));
+  background: var(--hair);
+  border-radius: 50% 50% 45% 45%;
+}
+
+.agent-avatar .agent-hair.hair-curly {
+  border-radius: 50% 50% 55% 55%;
+  filter: drop-shadow(0 0 1px rgba(0, 0, 0, 0.2));
+}
+
+.agent-avatar .agent-hair.hair-afro {
+  width: calc(22px * var(--scale));
+  height: calc(18px * var(--scale));
+  top: calc(-8px * var(--scale));
+  border-radius: 50%;
+}
+
+.agent-avatar .agent-hair.hair-ponytail::after {
+  content: '';
+  position: absolute;
+  bottom: calc(-4px * var(--scale));
+  right: calc(2px * var(--scale));
+  width: calc(6px * var(--scale));
+  height: calc(9px * var(--scale));
+  background: var(--hair);
+  border-radius: calc(4px * var(--scale));
+}
+
+.agent-avatar .agent-hair.hair-pigtails::before,
+.agent-avatar .agent-hair.hair-pigtails::after {
+  content: '';
+  position: absolute;
+  top: calc(5px * var(--scale));
+  width: calc(6px * var(--scale));
+  height: calc(6px * var(--scale));
+  background: var(--hair);
+  border-radius: 50%;
+}
+
+.agent-avatar .agent-hair.hair-pigtails::before {
+  left: calc(-4px * var(--scale));
+}
+
+.agent-avatar .agent-hair.hair-pigtails::after {
+  right: calc(-4px * var(--scale));
+}
+
+.agent-avatar .agent-hair.hair-beanie {
+  background: var(--accent);
+  border-radius: 50% 50% 40% 40%;
+  box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.2);
+}
+
+.agent-avatar .agent-hair.hair-beanie::after {
+  content: '';
+  position: absolute;
+  bottom: calc(-3px * var(--scale));
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(18px * var(--scale));
+  height: calc(4px * var(--scale));
+  border-radius: calc(3px * var(--scale));
+  background: rgba(0, 0, 0, 0.25);
+}
+
+.agent-avatar .agent-hair.hair-spiky {
+  clip-path: polygon(0% 60%, 10% 15%, 25% 45%, 40% 10%, 55% 45%, 70% 15%, 90% 50%, 100% 10%, 100% 100%, 0% 100%);
+}
+
+.agent-avatar .agent-hair.hair-buzz {
+  height: calc(7px * var(--scale));
+  border-radius: 40% 40% 45% 45%;
+  top: calc(-2px * var(--scale));
+}
+
+.agent-avatar .agent-hair.hair-sidepart {
+  clip-path: polygon(0% 100%, 0% 35%, 30% 10%, 100% 0%, 100% 100%);
+}
+
+.agent-avatar .agent-hair.hair-slick {
+  clip-path: polygon(0% 100%, 0% 25%, 40% 5%, 80% 20%, 100% 5%, 100% 100%);
+}
+
+.agent-avatar .agent-hair.hair-short {
+  height: calc(10px * var(--scale));
+  top: calc(-4px * var(--scale));
+}
+
+.agent-avatar .agent-face-accessory {
+  pointer-events: none;
+  position: absolute;
+  top: calc(8px * var(--scale));
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.agent-avatar .agent-face-accessory.freckles::before,
+.agent-avatar .agent-face-accessory.freckles::after {
+  content: '';
+  position: absolute;
+  width: calc(1.5px * var(--scale));
+  height: calc(1.5px * var(--scale));
+  background: rgba(80, 45, 30, 0.7);
+  border-radius: 50%;
+  top: 0;
+}
+
+.agent-avatar .agent-face-accessory.freckles::before {
+  box-shadow: calc(2px * var(--scale)) 1px 0 rgba(80, 45, 30, 0.6), calc(-2px * var(--scale)) 1px 0 rgba(80, 45, 30, 0.6);
+}
+
+.agent-avatar .agent-face-accessory.freckles::after {
+  display: none;
+}
+
+.agent-avatar .agent-face-accessory.rosyCheeks::before,
+.agent-avatar .agent-face-accessory.rosyCheeks::after {
+  content: '';
+  position: absolute;
+  width: calc(4px * var(--scale));
+  height: calc(4px * var(--scale));
+  border-radius: 50%;
+  background: rgba(255, 153, 170, 0.55);
+  top: calc(1px * var(--scale));
+}
+
+.agent-avatar .agent-face-accessory.rosyCheeks::before {
+  left: calc(-6px * var(--scale));
+}
+
+.agent-avatar .agent-face-accessory.rosyCheeks::after {
+  right: calc(-6px * var(--scale));
+}
+
+.agent-avatar .agent-face-accessory.glasses {
+  width: calc(16px * var(--scale));
+  height: calc(6px * var(--scale));
+}
+
+.agent-avatar .agent-face-accessory.glasses .lens {
+  position: absolute;
+  top: 0;
+  width: calc(6px * var(--scale));
+  height: 100%;
+  border: calc(1px * var(--scale)) solid rgba(33, 36, 52, 0.85);
+  border-radius: calc(3px * var(--scale));
+  background: rgba(255, 255, 255, 0.35);
+}
+
+.agent-avatar .agent-face-accessory.glasses .lens.left {
+  left: 0;
+}
+
+.agent-avatar .agent-face-accessory.glasses .lens.right {
+  right: 0;
+}
+
+.agent-avatar .agent-face-accessory.glasses .bridge {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: calc(4px * var(--scale));
+  height: calc(1px * var(--scale));
+  background: rgba(33, 36, 52, 0.85);
+  transform: translate(-50%, -50%);
+}
+
+
+.agent-avatar .agent-mouth.open {
+  height: calc(4px * var(--scale));
+  border-radius: calc(3px * var(--scale));
+}
+
+.agent-avatar .agent-mouth.open::after {
+  content: '';
+  position: absolute;
+  top: calc(1px * var(--scale));
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(4px * var(--scale));
+  height: calc(2px * var(--scale));
+  border-radius: calc(2px * var(--scale));
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.agent-avatar.is-recruiter .agent-label {
+  background: rgba(210, 224, 255, 0.85);
+  color: #13203f;
+}
+
 @media (max-width: 680px) {
   .control-panel {
     padding: 1.9rem 1.5rem 2.3rem;
@@ -319,3 +681,4 @@ button:disabled {
     font-size: 12px !important;
   }
 }
+
