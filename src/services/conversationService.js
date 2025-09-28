@@ -78,7 +78,13 @@ export class ConversationService {
           messageEndsConversation = message.toLowerCase().includes('[end]');
           cleanMessage = message.replace(/\s*\[end\]/gi, '').trim();
           
-          console.log(`${currentSpeaker.isStudent ? 'Student' : 'Recruiter'} ${currentSpeaker.id}: "${cleanMessage}"`);
+          // For student-student conversations, check if message is just a single emoji
+          if (currentSpeaker.isStudent && currentListener.isStudent && this.isSingleEmoji(cleanMessage)) {
+            messageEndsConversation = true;
+            console.log(`[EMOJI END] ${currentSpeaker.isStudent ? 'Student' : 'Recruiter'} ${currentSpeaker.id}: "${cleanMessage}"`);
+          } else {
+            console.log(`${currentSpeaker.isStudent ? 'Student' : 'Recruiter'} ${currentSpeaker.id}: "${cleanMessage}"`);
+          }
         }
 
         // Show message in chat bubble with longer duration
@@ -232,15 +238,76 @@ export class ConversationService {
   }
 
   /**
-   * Build prompt for student-student conversations (funny small talk)
+   * Check if a message is just a single emoji
+   * @param {string} message - Message to check
+   * @returns {boolean} True if message is just one emoji
+   */
+  isSingleEmoji(message) {
+    // Remove whitespace and check if it's a single emoji
+    const trimmed = message.trim();
+    if (trimmed.length === 0) return false;
+    
+    // Comprehensive emoji detection regex
+    const emojiRegex = /^[\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]|[\u{1F900}-\u{1F9FF}]|[\u{1FA70}-\u{1FAFF}]$/u;
+    
+    // Also check for specific emojis we're encouraging
+    const commonEmojis = ['😭', '🥀', '💀', '🔥', '👀', '🤯', '💯', '🙌', '😂', '🤔', '😎'];
+    const isCommonEmoji = commonEmojis.includes(trimmed);
+    
+    return (emojiRegex.test(trimmed) || isCommonEmoji) && trimmed.length <= 4; // Account for multi-byte emojis
+  }
+
+  /**
+   * Build prompt for student-student conversations (brainrot and meme culture)
    */
   buildStudentStudentPrompt(speaker, otherAgent, isStarter, conversationHistory) {
+    // Roll dice to determine brainrot intensity (1-6)
+    const brainrotLevel = Math.floor(Math.random() * 6) + 1;
+    const shouldUseBrainrot = brainrotLevel >= 3; // 50% chance for brainrot mode
+    
     let prompt = `You are a ${speaker.stats.major} student with ${speaker.stats.experience} years of experience and skills in ${speaker.stats.skills.slice(0, 2).join(' and ')}.
 
-You're looking to form study groups, find teammates for projects, or get help with coding problems. Be funny and relatable but focus on finding collaboration opportunities. Talk about what you're working on, what you need help with, or what you can help others with.`;
+You're a terminally online CS student who speaks fluent internet culture and memes. You bond with other students over shared experiences and internet humor.`;
+
+    if (shouldUseBrainrot) {
+      prompt += `\n\n🎲 BRAINROT MODE ACTIVATED 🎲
+
+You're deep in the brainrot pipeline and speak in pure internet slang. Use terms like:
+- "no cap" (telling the truth)
+- "sus" (suspicious/sketchy) 
+- "based" (confident/cool)
+- "cringe" (embarrassing)
+- "flex" (show off)
+- "shook" (shocked)
+- "mood" (relatable)
+- "yeet" (throw/enthusiasm)
+- "vibe check" (assess the situation)
+- "it's giving..." (it seems like...)
+
+MANDATORY: Use these emojis frequently: 😭🥀💀
+Also sprinkle in: 🔥👀🤯💯🙌
+
+Talk about coding struggles, classes, projects, but make it absolutely unhinged with brainrot language.
+
+CRITICAL RULES:
+- MAXIMUM 4-5 words plus ONE emoji
+- NO punctuation allowed (no periods, commas, question marks, exclamation points)
+- STRONGLY ENCOURAGED: respond with ONLY a single emoji and no text (this ends the conversation naturally)
+- If you send just an emoji, the conversation ends immediately`;
+    } else {
+      prompt += `\n\nTalk about programming memes, coding struggles, classes, projects, or shared student experiences. Be funny and relatable, maybe drop some internet slang, but keep it more normal. You might use 😭💀 occasionally but don't go overboard.
+
+CRITICAL RULES:
+- MAXIMUM 4-5 words plus ONE emoji
+- NO punctuation allowed (no periods, commas, question marks, exclamation points)
+- STRONGLY ENCOURAGED: respond with ONLY a single emoji and no text (this ends the conversation naturally)
+- If you send just an emoji, the conversation ends immediately`;
+    }
 
     if (isStarter) {
-      prompt += `\n\nStart the conversation with a greeting.`;
+      prompt += shouldUseBrainrot ? 
+        `\n\nStart with 4-5 words max or just one emoji.` :
+        `\n\nStart with 4-5 words max or just one emoji.`;
     } else {
       // Add conversation history
       if (conversationHistory.length > 0) {
@@ -249,9 +316,13 @@ You're looking to form study groups, find teammates for projects, or get help wi
           const speakerType = msg.speaker.isStudent ? 'Student' : 'Recruiter';
           prompt += `${speakerType}: "${msg.message}"\n`;
         });
-        prompt += `\nRespond appropriately.`;
+        prompt += shouldUseBrainrot ? 
+          `\nRespond with 4-5 words max or just one emoji.` :
+          `\nRespond with 4-5 words max or just one emoji.`;
       } else {
-        prompt += `\n\nRespond appropriately.`;
+        prompt += shouldUseBrainrot ? 
+          `\nRespond with 4-5 words max or just one emoji.` :
+          `\nRespond with 4-5 words max or just one emoji.`;
       }
     }
 
