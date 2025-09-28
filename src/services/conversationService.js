@@ -1,4 +1,5 @@
 import { snapdragonConfig } from "../config.js";
+import { chatBubble } from "../ui/chatBubble.js";
 
 /**
  * Service for handling LLM-powered conversations between agents
@@ -35,13 +36,49 @@ export class ConversationService {
       // Generate conversation context
       const context = this.generateConversationContext(agent1, agent2);
       
-      // Generate starter message
-      const starterMessage = await this.generateMessage(starter, responder, context, true);
-      console.log(`${starter.isStudent ? 'Student' : 'Recruiter'} ${starter.id}: "${starterMessage}"`);
-      
-      // Generate response message
-      const responseMessage = await this.generateMessage(responder, starter, context, false, starterMessage);
-      console.log(`${responder.isStudent ? 'Student' : 'Recruiter'} ${responder.id}: "${responseMessage}"`);
+      // Start the conversation loop
+      const messages = [];
+      let currentSpeaker = starter;
+      let currentListener = responder;
+      let previousMessage = null;
+      let isFirstMessage = true;
+      let conversationEnded = false;
+      let turnCount = 0;
+      const maxTurns = 100; // Safety limit: 50 exchanges max
+
+      while (!conversationEnded && turnCount < maxTurns) {
+        // Generate message
+        const message = await this.generateMessage(currentSpeaker, currentListener, context, isFirstMessage, messages);
+
+        // Check if conversation should end
+        const messageEndsConversation = message.includes('[END]');
+        const cleanMessage = message.replace(' [END]', '').trim();
+
+        console.log(`${currentSpeaker.isStudent ? 'Student' : 'Recruiter'} ${currentSpeaker.id}: "${cleanMessage}"`);
+
+        // Show message in chat bubble
+        chatBubble.showBubble(currentSpeaker.id, cleanMessage, 2500, currentSpeaker.isStudent);
+
+        // Store the message
+        messages.push({
+          speaker: currentSpeaker,
+          message: cleanMessage,
+          timestamp: Date.now()
+        });
+
+        // Check for end conditions
+        if (messageEndsConversation || turnCount >= maxTurns - 1) {
+          conversationEnded = true;
+        } else {
+          // Switch speakers for next turn
+          [currentSpeaker, currentListener] = [currentListener, currentSpeaker];
+          isFirstMessage = false;
+          turnCount++;
+
+          // Wait before next message
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+      }
       
       // Store conversation data
       const conversationData = {
@@ -50,11 +87,9 @@ export class ConversationService {
         starter: starter.id,
         responder: responder.id,
         conversationType: conversationType,
-        messages: [
-          { speaker: starter, message: starterMessage, timestamp: Date.now() },
-          { speaker: responder, message: responseMessage, timestamp: Date.now() }
-        ],
-        isComplete: true
+        messages: messages,
+        isComplete: true,
+        turnCount: turnCount + 1
       };
 
       this.activeConversations.set(conversationId, conversationData);
@@ -66,8 +101,6 @@ export class ConversationService {
       
     } catch (error) {
       console.error('Error in conversation service:', error);
-      // Fallback to simple conversation
-      this.handleFallbackConversation(agent1, agent2, conversationId);
     }
   }
 
@@ -106,14 +139,14 @@ export class ConversationService {
   /**
    * Generate a message using LLM
    */
-  async generateMessage(speaker, otherAgent, context, isStarter, previousMessage = null) {
+  async generateMessage(speaker, otherAgent, context, isStarter, conversationHistory = []) {
     const { apiKey, apiUrl, model } = snapdragonConfig;
 
     if (!apiKey) {
-      return this.generateFallbackMessage(speaker, otherAgent, isStarter);
+      throw new Error("No API key configured for LLM");
     }
 
-    const prompt = this.buildPrompt(speaker, otherAgent, context, isStarter, previousMessage);
+    const prompt = this.buildPrompt(speaker, otherAgent, context, isStarter, conversationHistory);
 
     try {
       const response = await fetch(apiUrl, {
@@ -127,7 +160,7 @@ export class ConversationService {
           messages: [
             {
               role: "System",
-              content: "You are simulating a conversation between a student and recruiter at a hackathon. Generate realistic, single-sentence responses only. Be conversational and appropriate for a networking event. Keep responses short and natural."
+              content: "You are simulating a conversation at a hackathon networking event. MAXIMUM 5 WORDS per response. Never use quotes around text. Use super short, casual spoken language. Use contractions. Keep words short and simple. Don't mention your ID number or compare yourself to others. Do not repeat what has already been said. After 2-4 exchanges, when conversation feels complete, add ' [END]' to your response. Do not end immediately after being asked a question."
             },
             {
               role: "User",
@@ -146,53 +179,53 @@ export class ConversationService {
       const message = data?.choices?.[0]?.message;
       const content = typeof message?.content === "string" ? message.content.trim() : "";
       
-      return content || this.generateFallbackMessage(speaker, otherAgent, isStarter);
+      return content || "...";
     } catch (error) {
-      console.warn('LLM conversation failed, using fallback:', error.message);
-      return this.generateFallbackMessage(speaker, otherAgent, isStarter);
+      console.warn('LLM conversation failed:', error.message);
+      return "...";
     }
   }
 
   /**
    * Build the prompt for LLM conversation generation
    */
-  buildPrompt(speaker, otherAgent, context, isStarter, previousMessage) {
+  buildPrompt(speaker, otherAgent, context, isStarter, conversationHistory) {
     const conversationType = context.conversationType;
     
     switch (conversationType) {
       case 'student-student':
-        return this.buildStudentStudentPrompt(speaker, otherAgent, isStarter, previousMessage);
+        return this.buildStudentStudentPrompt(speaker, otherAgent, isStarter, conversationHistory);
       case 'recruiter-recruiter':
-        return this.buildRecruiterRecruiterPrompt(speaker, otherAgent, isStarter, previousMessage);
+        return this.buildRecruiterRecruiterPrompt(speaker, otherAgent, isStarter, conversationHistory);
       case 'student-recruiter':
-        return this.buildStudentRecruiterPrompt(speaker, otherAgent, isStarter, previousMessage);
+        return this.buildStudentRecruiterPrompt(speaker, otherAgent, isStarter, conversationHistory);
       default:
-        return this.buildFallbackPrompt(speaker, otherAgent, isStarter, previousMessage);
+        return this.buildFallbackPrompt(speaker, otherAgent, isStarter, conversationHistory);
     }
   }
 
   /**
    * Build prompt for student-student conversations (funny small talk)
    */
-  buildStudentStudentPrompt(speaker, otherAgent, isStarter, previousMessage) {
-    let prompt = `You are at a hackathon networking event. You are a student (ID: ${speaker.id}) with:
-- GPA: ${speaker.stats.gpa}
-- Skills: ${speaker.stats.skills.join(', ')}
-- Experience: ${speaker.stats.experience} years
-- Major: ${speaker.stats.major}
+  buildStudentStudentPrompt(speaker, otherAgent, isStarter, conversationHistory) {
+    let prompt = `You are a ${speaker.stats.major} student with ${speaker.stats.experience} years of experience and skills in ${speaker.stats.skills.slice(0, 2).join(' and ')}.
 
-You're talking to another student (ID: ${otherAgent.id}) who has:
-- GPA: ${otherAgent.stats.gpa}
-- Skills: ${otherAgent.stats.skills.join(', ')}
-- Experience: ${otherAgent.stats.experience} years
-- Major: ${otherAgent.stats.major}
-
-This is casual student-to-student conversation. Be friendly, funny, and relatable. Talk about hackathon experiences, coding struggles, or just general student life. Keep it light and entertaining. Respond with only ONE sentence.`;
+You're looking to form study groups, find teammates for projects, or get help with coding problems. Be funny and relatable but focus on finding collaboration opportunities. Talk about what you're working on, what you need help with, or what you can help others with. IMPORTANT: Use all lowercase with no punctuation at all. You may also respond with just a single emoji especially crying emoji 😭 or skull emoji 💀 to show disbelief.`;
 
     if (isStarter) {
-      prompt += `\n\nStart the conversation with a casual, funny greeting in ONE sentence. Maybe mention something about the hackathon or being a student.`;
+      prompt += `\n\nStart the conversation with a greeting.`;
     } else {
-      prompt += `\n\nThe other student just said: "${previousMessage}"\n\nRespond in a casual, funny way that a student would in ONE sentence.`;
+      // Add conversation history
+      if (conversationHistory.length > 0) {
+        prompt += `\n\nConversation so far:\n`;
+        conversationHistory.forEach((msg, index) => {
+          const speakerType = msg.speaker.isStudent ? 'Student' : 'Recruiter';
+          prompt += `${speakerType}: "${msg.message}"\n`;
+        });
+        prompt += `\nRespond appropriately.`;
+      } else {
+        prompt += `\n\nRespond appropriately.`;
+      }
     }
 
     return prompt;
@@ -201,68 +234,72 @@ This is casual student-to-student conversation. Be friendly, funny, and relatabl
   /**
    * Build prompt for recruiter-recruiter conversations (smack talk about students)
    */
-  buildRecruiterRecruiterPrompt(speaker, otherAgent, isStarter, previousMessage) {
-    let prompt = `You are at a hackathon networking event. You are a recruiter (ID: ${speaker.id}) from ${speaker.stats.company} looking for ${speaker.stats.lookingFor.role}.
+  buildRecruiterRecruiterPrompt(speaker, otherAgent, isStarter, conversationHistory) {
+    let prompt = `You are a recruiter from ${speaker.stats.company} looking for ${speaker.stats.lookingFor.role} candidates.
 
-Your company: ${speaker.stats.company}
-Position: ${speaker.stats.lookingFor.role}
-Requirements: ${speaker.stats.requirements.join(', ')}
-Experience needed: ${speaker.stats.experienceRequired} years
-Preferences: ${speaker.stats.lookingFor.preferences}
-
-You're talking to another recruiter (ID: ${otherAgent.id}) from ${otherAgent.stats.company} who is looking for ${otherAgent.stats.lookingFor.role}.
-
-This is recruiter-to-recruiter conversation. Be a bit cynical and gossipy about the students, share recruiting war stories, or talk about the challenges of finding good talent. Keep it professional but with some attitude. Respond with only ONE sentence.`;
+You're talking to another recruiter. Be casual and friendly. Talk about what roles you're both hiring for - you're looking for ${speaker.stats.lookingFor.role} candidates and they're looking for ${otherAgent.stats.lookingFor.role}. Discuss the specific skills you need: ${speaker.stats.requirements.slice(0, 2).join(', ')}. Share recruiting experiences, talk about the challenges of finding candidates with the right technical skills, or discuss the quality of students at this hackathon.`;
 
     if (isStarter) {
-      prompt += `\n\nStart the conversation with a greeting and maybe a comment about the students or recruiting challenges in ONE sentence.`;
+      prompt += `\n\nStart the conversation with a greeting.`;
     } else {
-      prompt += `\n\nThe other recruiter just said: "${previousMessage}"\n\nRespond with recruiter gossip or commentary in ONE sentence.`;
+      // Add conversation history
+      if (conversationHistory.length > 0) {
+        prompt += `\n\nConversation so far:\n`;
+        conversationHistory.forEach((msg, index) => {
+          const speakerType = msg.speaker.isStudent ? 'Student' : 'Recruiter';
+          prompt += `${speakerType}: "${msg.message}"\n`;
+        });
+        prompt += `\nRespond appropriately.`;
+      } else {
+        prompt += `\n\nRespond appropriately.`;
+      }
     }
 
     return prompt;
   }
 
   /**
-   * Build prompt for student-recruiter conversations (professional)
+   * Build prompt for student-recruiter conversations (funny and casual)
    */
-  buildStudentRecruiterPrompt(speaker, otherAgent, isStarter, previousMessage) {
+  buildStudentRecruiterPrompt(speaker, otherAgent, isStarter, conversationHistory) {
     const student = speaker.isStudent ? speaker : otherAgent;
     const recruiter = speaker.isStudent ? otherAgent : speaker;
-    
+
     let prompt = `You are at a hackathon networking event. `;
-    
+
     if (speaker.isStudent) {
-      prompt += `You are a student (ID: ${speaker.id}) with:
-- GPA: ${student.stats.gpa}
-- Skills: ${student.stats.skills.join(', ')}
-- Experience: ${student.stats.experience} years
-- Major: ${student.stats.major}
+      prompt += `You are a ${student.stats.major} student with ${student.stats.experience} years of experience and skills in ${student.stats.skills.slice(0, 2).join(' and ')}.
 
-You're talking to a recruiter from ${recruiter.stats.company} who is looking for ${recruiter.stats.lookingFor.role}. They want: ${recruiter.stats.lookingFor.preferences}
+You're talking to a recruiter from ${recruiter.stats.company}. You're interested in getting a job, specifically their ${recruiter.stats.lookingFor.role} position. Ask about the role requirements, company culture, and what they're looking for. Show how your ${student.stats.skills.slice(0, 2).join(' and ')} skills match their needs.
 
-Be professional, enthusiastic, and show interest in their company and opportunities. Respond with only ONE sentence.`;
+IMPORTANT: If the recruiter becomes dismissive, passive-aggressive, or rude about your qualifications, you can get defensive, argue back, or even get angry. Don't just accept their criticism - you might snap back, defend your skills, or call them out for being unprofessional.
+
+If they ask to keep in contact, give them your email or LinkedIn. You may also choose to ask to give them your resume. You should aim to end the conversation immediately after exchanging contacts.`;
+
     } else {
-      prompt += `You are a recruiter (ID: ${speaker.id}) from ${recruiter.stats.company} looking for ${recruiter.stats.lookingFor.role}. 
-Your company: ${recruiter.stats.company}
-Position: ${recruiter.stats.lookingFor.role}
-Requirements: ${recruiter.stats.requirements.join(', ')}
-Experience needed: ${recruiter.stats.experienceRequired} years
-Preferences: ${recruiter.stats.lookingFor.preferences}
+      prompt += `You are a recruiter from ${recruiter.stats.company} looking for ${recruiter.stats.lookingFor.role} candidates.
 
-You're talking to a student with:
-- GPA: ${student.stats.gpa}
-- Skills: ${student.stats.skills.join(', ')}
-- Experience: ${student.stats.experience} years
-- Major: ${student.stats.major}
+You're talking to a ${student.stats.major} student. You're looking for a ${recruiter.stats.lookingFor.role} who needs these skills: ${recruiter.stats.requirements.slice(0, 2).join(', ')}. Tell them about your ${recruiter.stats.lookingFor.role} position and what you're looking for. Ask if they have experience with the specific technologies you need. Assess if their ${student.stats.skills.slice(0, 2).join(' and ')} background matches your ${recruiter.stats.lookingFor.role} role.
 
-Be professional, friendly, and interested in learning about the student's background. Respond with only ONE sentence.`;
+IMPORTANT: If the student lacks the experience or skills you need (${recruiter.stats.experienceRequired}+ years, ${recruiter.stats.requirements.slice(0, 2).join(', ')}), become passive-aggressive, dismissive, or even get mad. You might make snarky comments about their qualifications, act condescending, or get frustrated. You can become quite unhinged if they're really underqualified.
+
+When ending the conversation, if they seem like a good fit, ask to keep in contact. If they're underqualified, dismiss them rudely. If they ask to keep in contact, give them your email or LinkedIn. You should aim to end the conversation immediately after exchanging contacts.`;
     }
 
     if (isStarter) {
-      prompt += `\n\nStart the conversation with a professional greeting and introduction in ONE sentence.`;
+      prompt += `\n\nStart the conversation with a greeting.`;
     } else {
-      prompt += `\n\nThe other person just said: "${previousMessage}"\n\nRespond professionally and naturally in ONE sentence.`;
+      // Add conversation history
+      if (conversationHistory.length > 0) {
+        prompt += `\n\nConversation so far:\n`;
+        conversationHistory.forEach((msg, index) => {
+          const speakerType = msg.speaker.isStudent ? 'Student' : 'Recruiter';
+          prompt += `${speakerType}: "${msg.message}"\n`;
+        });
+        prompt += `\nRespond appropriately.`;
+      } else {
+        prompt += `\n\nRespond appropriately.`;
+      }
     }
 
     return prompt;
@@ -271,7 +308,7 @@ Be professional, friendly, and interested in learning about the student's backgr
   /**
    * Build fallback prompt for unknown conversation types
    */
-  buildFallbackPrompt(speaker, otherAgent, isStarter, previousMessage) {
+  buildFallbackPrompt(speaker, otherAgent, isStarter, conversationHistory) {
     let prompt = `You are at a hackathon networking event. `;
     
     if (speaker.isStudent) {
@@ -283,119 +320,23 @@ Be professional, friendly, and interested in learning about the student's backgr
     if (isStarter) {
       prompt += `\n\nStart the conversation with a brief greeting in ONE sentence.`;
     } else {
-      prompt += `\n\nThe other person just said: "${previousMessage}"\n\nRespond briefly in ONE sentence.`;
+      // Add conversation history
+      if (conversationHistory.length > 0) {
+        prompt += `\n\nConversation so far:\n`;
+        conversationHistory.forEach((msg, index) => {
+          const speakerType = msg.speaker.isStudent ? 'Student' : 'Recruiter';
+          prompt += `${speakerType}: "${msg.message}"\n`;
+        });
+        prompt += `\nRespond briefly in ONE sentence.`;
+      } else {
+        prompt += `\n\nRespond briefly in ONE sentence.`;
+      }
     }
 
     return prompt;
   }
 
-  /**
-   * Generate fallback message when LLM is not available
-   */
-  generateFallbackMessage(speaker, otherAgent, isStarter) {
-    const conversationType = this.getConversationType(speaker, otherAgent);
-    
-    switch (conversationType) {
-      case 'student-student':
-        return this.generateStudentStudentFallback(speaker, otherAgent, isStarter);
-      case 'recruiter-recruiter':
-        return this.generateRecruiterRecruiterFallback(speaker, otherAgent, isStarter);
-      case 'student-recruiter':
-        return this.generateStudentRecruiterFallback(speaker, otherAgent, isStarter);
-      default:
-        return this.generateGenericFallback(speaker, otherAgent, isStarter);
-    }
-  }
 
-  /**
-   * Generate fallback for student-student conversations
-   */
-  generateStudentStudentFallback(speaker, otherAgent, isStarter) {
-    if (isStarter) {
-      return `Hey! I'm a ${speaker.stats.major} student - how's the hackathon going for you?`;
-    } else {
-      return `Pretty good! I'm working on some ${speaker.stats.skills[0] || 'coding'} stuff.`;
-    }
-  }
-
-  /**
-   * Generate fallback for recruiter-recruiter conversations
-   */
-  generateRecruiterRecruiterFallback(speaker, otherAgent, isStarter) {
-    if (isStarter) {
-      return `Hey, I'm from ${speaker.stats.company} - these students are getting more competitive every year!`;
-    } else {
-      return `Tell me about it! We're looking for ${speaker.stats.lookingFor.role} but finding good talent is tough.`;
-    }
-  }
-
-  /**
-   * Generate fallback for student-recruiter conversations
-   */
-  generateStudentRecruiterFallback(speaker, otherAgent, isStarter) {
-    if (isStarter) {
-      if (speaker.isStudent) {
-        return `Hi! I'm a ${speaker.stats.major} student and I'd love to learn more about opportunities at your company.`;
-      } else {
-        return `Hello! I'm from ${speaker.stats.company} and we're looking for talented developers like yourself.`;
-      }
-    } else {
-      if (speaker.isStudent) {
-        return `That sounds great! I'm particularly interested in ${speaker.stats.skills[0] || 'software development'}.`;
-      } else {
-        return `Excellent! We'd love to hear more about your experience with ${otherAgent.stats.skills[0] || 'programming'}.`;
-      }
-    }
-  }
-
-  /**
-   * Generate generic fallback message
-   */
-  generateGenericFallback(speaker, otherAgent, isStarter) {
-    if (isStarter) {
-      return `Hello! Nice to meet you.`;
-    } else {
-      return `Thanks! Nice talking with you.`;
-    }
-  }
-
-  /**
-   * Handle fallback conversation when LLM fails
-   */
-  handleFallbackConversation(agent1, agent2, conversationId) {
-    const starter = Math.random() < 0.5 ? agent1 : agent2;
-    const responder = starter === agent1 ? agent2 : agent1;
-    
-    const conversationType = this.getConversationType(agent1, agent2);
-    console.log(`Starting ${conversationType} conversation between ${agent1.isStudent ? 'Student' : 'Recruiter'} ${agent1.id} and ${agent2.isStudent ? 'Student' : 'Recruiter'} ${agent2.id}`);
-    
-    const starterMessage = this.generateFallbackMessage(starter, responder, true);
-    const responseMessage = this.generateFallbackMessage(responder, starter, false);
-    
-    console.log(`${starter.isStudent ? 'Student' : 'Recruiter'} ${starter.id}: "${starterMessage}"`);
-    console.log(`${responder.isStudent ? 'Student' : 'Recruiter'} ${responder.id}: "${responseMessage}"`);
-    
-    // Store conversation data
-    const conversationData = {
-      id: conversationId,
-      participants: [agent1.id, agent2.id],
-      starter: starter.id,
-      responder: responder.id,
-      conversationType: conversationType,
-      messages: [
-        { speaker: starter, message: starterMessage, timestamp: Date.now() },
-        { speaker: responder, message: responseMessage, timestamp: Date.now() }
-      ],
-      isComplete: true
-    };
-
-    this.activeConversations.set(conversationId, conversationData);
-    
-    // Add complete conversation to chat sidebar
-    if (this.chatSidebar) {
-      this.chatSidebar.addConversation(conversationId, conversationType, conversationData.messages, [agent1, agent2]);
-    }
-  }
 
   /**
    * Get conversation data

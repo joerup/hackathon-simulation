@@ -1,3 +1,5 @@
+import { chatBubble } from "./ui/chatBubble.js";
+
 /**
  * GridRenderer class - Handles all rendering logic for the game grid
  * Completely separated from game state logic
@@ -131,6 +133,9 @@ export class GridRenderer {
       cell.style.height = `${cellSize}px`;
       cell.style.fontSize = `${fontSize}px`;
     });
+
+    // Update chat bubble positions when grid resizes
+    chatBubble.updateBubblePositions();
   }
 
   /**
@@ -382,6 +387,9 @@ export class GridRenderer {
       window.removeEventListener('resize', this.resizeHandler);
       this.resizeHandler = null;
     }
+
+    // Clean up chat bubbles
+    chatBubble.destroy();
 
     if (this.container && this.container.parentNode) {
       this.container.parentNode.removeChild(this.container);
