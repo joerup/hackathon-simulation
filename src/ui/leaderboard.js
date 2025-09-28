@@ -48,7 +48,7 @@ export class LeaderboardModal {
       'Total Students': students.length,
       'Total Conversations': students.reduce((s, st) => s + (st.recruitersSpokenTo || 0), 0),
       'Total Distance': students.reduce((s, st) => s + (st.distanceTraveled || 0), 0),
-      'Total Job Offers': students.reduce((s, st) => s + (st.jobOffers || 0), 0)
+      'Total Connections': students.reduce((s, st) => s + (st.connections || 0), 0)
     };
     
     Object.entries(totals).forEach(([label, value]) => {
@@ -64,7 +64,7 @@ export class LeaderboardModal {
     // Header
     const thead = this.createElement('thead', `background:${S.highlightHover}`);
     const headerRow = document.createElement('tr');
-    ['Rank', 'Name', 'Job Offers', 'Avg Score', 'Total Score', 'Interactions'].forEach((text, i) => {
+    ['Rank', 'Name', 'Connections', 'Avg Score', 'Total Score', 'Interactions'].forEach((text, i) => {
       const isHighlight = i === 2; // Highlight job offers column
       const th = this.createElement('th', `padding:0.5rem;border-bottom:2px solid ${S.border};text-align:${i === 0 ? 'left' : 'center'};font-weight:600;color:${S.primary};font-size:0.85rem${isHighlight ? ';background:' + S.highlight : ''}`, text);
       headerRow.appendChild(th);
@@ -91,7 +91,7 @@ export class LeaderboardModal {
         [
           [rankText, `padding:0.75rem;border-bottom:1px solid ${S.borderLight};font-weight:700;color:${S.primaryDark};width:60px`],
           [student.name || `Student ${student.id}`, `padding:0.75rem;border-bottom:1px solid ${S.borderLight};font-weight:700;color:${S.primary}`],
-          [student.stats?.jobOffers || student.jobOffers || 0, `padding:0.5rem;border-bottom:1px solid ${S.borderLight};text-align:center;font-weight:700;color:${S.secondary}`],
+          [student.stats?.connections || student.connections || 0, `padding:0.5rem;border-bottom:1px solid ${S.borderLight};text-align:center;font-weight:700;color:${S.secondary}`],
           [student.calculatedAvgScore ? student.calculatedAvgScore.toFixed(1) : '0.0', `padding:0.5rem;border-bottom:1px solid ${S.borderLight};text-align:center;font-weight:600;color:${S.accent}`],
           [student.calculatedTotalScore ? student.calculatedTotalScore.toFixed(0) : '0', `padding:0.5rem;border-bottom:1px solid ${S.borderLight};text-align:center;font-weight:500;color:${S.primary}`],
           [student.calculatedInteractionCount || 0, `padding:0.5rem;border-bottom:1px solid ${S.borderLight};text-align:center;font-weight:500;color:${S.primary}`]
@@ -203,7 +203,7 @@ export class LeaderboardModal {
       'Total Students': students.length,
       'Total Conversations': students.reduce((sum, student) => sum + (student.recruitersSpokenTo || 0), 0),
       'Total Distance': students.reduce((sum, student) => sum + (student.distanceTraveled || 0), 0),
-      'Total Job Offers': students.reduce((sum, student) => sum + (student.jobOffers || 0), 0)
+      'Total Connections': students.reduce((sum, student) => sum + (student.connections || 0), 0)
     };
   }
 
@@ -270,10 +270,10 @@ export class LeaderboardModal {
     });
 
     const headerRow = document.createElement('tr');
-    const headers = ['Rank', 'Name', 'Job Offers', 'Recruiters Talked To', 'Distance Traveled'];
+    const headers = ['Rank', 'Name', 'Connections', 'Recruiters Talked To', 'Distance Traveled'];
 
     headers.forEach(headerText => {
-      const isPrimary = headerText === 'Job Offers';
+      const isPrimary = headerText === 'Connections';
       const cell = this.createTableCell(headerText, {
         isHeader: true,
         isPrimary
@@ -341,7 +341,7 @@ export class LeaderboardModal {
     const cells = [
       this.createTableCell(rankText, { bold: true, width: '60px' }),
       this.createTableCell(this.getStudentDisplayName(student), { bold: true }),
-      this.createTableCell(student.jobOffers || 0, { centered: true, bold: true }),
+      this.createTableCell(student.connections || 0, { centered: true, bold: true }),
       this.createTableCell(student.recruitersSpokenTo || 0, { centered: true }),
       this.createTableCell(student.distanceTraveled || 0, { centered: true })
     ];
@@ -378,7 +378,7 @@ export class LeaderboardModal {
 
   /**
    * Get student data sorted by priority:
-   * 1. Job Offers (primary - most important)
+   * 1. Connections (primary - most important)
    * 2. Total Interaction Score (secondary - sum of all interaction scores)
    * 3. Average Interaction Score (tertiary - quality of interactions)
    * 4. Recruiters Talked To (quaternary)  
@@ -401,9 +401,9 @@ export class LeaderboardModal {
         calculatedInteractionCount: interactionCount
       };
     }).sort((a, b) => {
-      // Primary: Job Offers
-      const aJobs = a.stats?.jobOffers || a.jobOffers || 0;
-      const bJobs = b.stats?.jobOffers || b.jobOffers || 0;
+      // Primary: Connections
+      const aJobs = a.stats?.connections || a.connections || 0;
+      const bJobs = b.stats?.connections || b.connections || 0;
       if (aJobs !== bJobs) return bJobs - aJobs;
       
       // Secondary: Total Interaction Score
@@ -438,7 +438,7 @@ export class LeaderboardModal {
       'Total Students': students.length,
       'Total Conversations': students.reduce((s, st) => s + (st.recruitersSpokenTo || 0), 0),
       'Total Distance': students.reduce((s, st) => s + (st.distanceTraveled || 0), 0),
-      'Total Job Offers': students.reduce((s, st) => s + (st.jobOffers || 0), 0)
+      'Total Connections': students.reduce((s, st) => s + (st.connections || 0), 0)
     };
     
     Object.entries(totals).forEach(([label, value]) => {
@@ -452,7 +452,7 @@ export class LeaderboardModal {
     
     const thead = this.createElement('thead', `background:${S.highlightHover}`);
     const headerRow = document.createElement('tr');
-    ['Rank', 'Name', 'Job Offers', 'Avg Score', 'Total Score', 'Interactions'].forEach((text, i) => {
+    ['Rank', 'Name', 'Connections', 'Avg Score', 'Total Score', 'Interactions'].forEach((text, i) => {
       const th = this.createElement('th', `padding:0.75rem;border-bottom:2px solid ${S.border};text-align:${i === 0 ? 'left' : 'center'};font-weight:600;color:${S.primary};font-size:0.9rem${i === 2 ? ';background:' + S.highlight : ''}`, text);
       headerRow.appendChild(th);
     });
@@ -477,7 +477,7 @@ export class LeaderboardModal {
         [
           [rankText, `padding:0.75rem;border-bottom:1px solid ${S.borderLight};font-weight:700;color:${S.primaryDark};width:60px`],
           [student.name || `Student ${student.id}`, `padding:0.75rem;border-bottom:1px solid ${S.borderLight};font-weight:700;color:${S.primary}`],
-          [student.stats?.jobOffers || student.jobOffers || 0, `padding:0.5rem;border-bottom:1px solid ${S.borderLight};text-align:center;font-weight:700;color:${S.secondary}`],
+          [student.stats?.connections || student.connections || 0, `padding:0.5rem;border-bottom:1px solid ${S.borderLight};text-align:center;font-weight:700;color:${S.secondary}`],
           [student.calculatedAvgScore ? student.calculatedAvgScore.toFixed(1) : '0.0', `padding:0.5rem;border-bottom:1px solid ${S.borderLight};text-align:center;font-weight:600;color:${S.accent}`],
           [student.calculatedTotalScore ? student.calculatedTotalScore.toFixed(0) : '0', `padding:0.5rem;border-bottom:1px solid ${S.borderLight};text-align:center;font-weight:500;color:${S.primary}`],
           [student.calculatedInteractionCount || 0, `padding:0.5rem;border-bottom:1px solid ${S.borderLight};text-align:center;font-weight:500;color:${S.primary}`]

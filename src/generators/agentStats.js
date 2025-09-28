@@ -100,7 +100,7 @@ function buildStudentStats() {
     buzzwords: pickSubset(BUZZWORDS, randomInt(1, 3)),
     summary: randomItem(STUDENT_SUMMARIES),
     fillerRatio: Number((Math.random() * 0.45).toFixed(2)),
-    jobOffers: 0,
+    connections: 0,
     interactionHistory: [], // Track all interactions with scores
     totalInteractionScore: 0 // Sum of all interaction scores
   };
