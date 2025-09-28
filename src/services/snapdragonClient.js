@@ -24,20 +24,22 @@ export async function requestResumeStats(payload) {
         },
         {
           role: "User",
-          content: `You are given a student resume. DO NOT MAKE ANY EXTERNAL CALLS. RESPOND ONLY IN TEXT. Read the resume and respond in the following format: \
-          resume_data: {\
-          summary (string)\\n \
-          experience (integer)\\n\
-          networking (integer)\\n\
-          energyScore (integer 0-100)\\n\
-          fillerRatio (number between 0 and 1)\\n\
-          luck (integer 0-100)\\n\
-          gpa(string or null)\\n\
-          internships (integer)\\n\
-          buzzwords (array of strings)\\n\
-          skills (array of objects with label (string) and score (integer 0-100))\
-          }\
-          Do not make any tool calls. Resume data follows: ${payload.text}`
+          content: `You are given a student resume. DO NOT MAKE ANY EXTERNAL CALLS. RESPOND ONLY IN TEXT. Read the resume and respond in the following format:
+resume_data: {
+name (string)
+summary (string)
+experience (integer)
+networking (integer)
+energyScore (integer 0-100)
+fillerRatio (number between 0 and 1)
+luck (integer 0-100)
+gpa (string or null)
+major (string or null)
+internships (integer)
+buzzwords (array of strings)
+skills (array of objects with label (string) and score (integer 0-100))
+}
+Do not make any tool calls. Resume data follows: ${payload.text}`
         }
       ],
       stream: false
@@ -122,6 +124,7 @@ function parseResumeData(rawContent) {
   return parsed;
 }
 
+
 function normalizeStats(rawStats, payload) {
   const coalesceNumber = (...values) => {
     for (const value of values) {
@@ -132,27 +135,102 @@ function normalizeStats(rawStats, payload) {
     return 0;
   };
 
+  const firstValidString = (...values) => {
+    for (const value of values) {
+      if (typeof value === "string") {
+        const trimmed = value.trim();
+        if (trimmed.length) {
+          return trimmed;
+        }
+      }
+    }
+    return "";
+  };
+
+  const extractMajor = () => {
+    if (!rawStats || typeof rawStats !== "object") {
+      return null;
+    }
+
+    const directMajor = firstValidString(rawStats.major, rawStats.fieldOfStudy, rawStats.field);
+    if (directMajor) {
+      return directMajor;
+    }
+
+    const education = rawStats.education;
+    if (typeof education === "string") {
+      const trimmed = education.trim();
+      return trimmed.length ? trimmed : null;
+    }
+
+    if (Array.isArray(education)) {
+      for (const entry of education) {
+        if (typeof entry === "string") {
+          const trimmed = entry.trim();
+          if (trimmed.length) {
+            return trimmed;
+          }
+        } else if (entry && typeof entry === "object") {
+          const candidate = firstValidString(entry.major, entry.field, entry.focus);
+          if (candidate) {
+            return candidate;
+          }
+        }
+      }
+    } else if (education && typeof education === "object") {
+      const candidate = firstValidString(education.major, education.field, education.focus);
+      if (candidate) {
+        return candidate;
+      }
+    }
+
+    return null;
+  };
+
+  const normalizedSkills = Array.isArray(rawStats?.skills)
+    ? rawStats.skills.map(normalizeSkill).filter(Boolean)
+    : [];
+
   const normalized = {
-    summary: typeof rawStats.summary === "string" ? rawStats.summary : "",
-    experience: coalesceNumber(rawStats.experience, rawStats.experienceScore, rawStats.experienceCount),
-    networking: coalesceNumber(rawStats.networking, rawStats.networkingScore, rawStats.networkingCount),
-    energyScore: coalesceNumber(rawStats.energyScore, rawStats.energy?.score),
+    name: firstValidString(rawStats?.name, rawStats?.fullName, rawStats?.preferredName, rawStats?.candidateName),
+    summary: firstValidString(rawStats?.summary, rawStats?.overview, rawStats?.profile),
+    experience: coalesceNumber(rawStats?.experience, rawStats?.experienceScore, rawStats?.experienceCount),
+    networking: coalesceNumber(rawStats?.networking, rawStats?.networkingScore, rawStats?.networkingCount),
+    energyScore: coalesceNumber(rawStats?.energyScore, rawStats?.energy?.score),
     fillerRatio:
-      typeof rawStats.fillerRatio === "number"
+      typeof rawStats?.fillerRatio === "number"
         ? clamp(rawStats.fillerRatio, 0, 1)
-        : typeof rawStats.energy?.fillerRatio === "number"
+        : typeof rawStats?.energy?.fillerRatio === "number"
         ? clamp(rawStats.energy.fillerRatio, 0, 1)
         : 0,
-    luck: coalesceNumber(rawStats.luck, rawStats.luckScore),
-    gpa: typeof rawStats.gpa === "string" ? rawStats.gpa : rawStats.gpa ?? null,
-    internships: coalesceNumber(rawStats.internships, rawStats.internshipCount),
-    buzzwords: Array.isArray(rawStats.buzzwords)
-      ? rawStats.buzzwords.map(String)
+    luck: coalesceNumber(rawStats?.luck, rawStats?.luckScore),
+    gpa:
+      typeof rawStats?.gpa === "string"
+        ? rawStats.gpa.trim()
+        : typeof rawStats?.gpa === "number" && Number.isFinite(rawStats.gpa)
+        ? rawStats.gpa
+        : rawStats?.gpa ?? null,
+    major: extractMajor(),
+    internships: coalesceNumber(rawStats?.internships, rawStats?.internshipCount),
+    buzzwords: Array.isArray(rawStats?.buzzwords)
+      ? rawStats.buzzwords
+          .map(item => String(item).trim())
+          .filter(Boolean)
       : [],
-    skills: Array.isArray(rawStats.skills)
-      ? rawStats.skills.map(normalizeSkill)
-      : []
+    skills: normalizedSkills
   };
+
+  if (!normalized.name) {
+    normalized.name = "";
+  }
+
+  if (!normalized.summary) {
+    normalized.summary = "";
+  }
+
+  if (!normalized.major) {
+    normalized.major = null;
+  }
 
   if (!normalized.luck && (payload?.text || payload?.fileName)) {
     normalized.luck = generateDeterministicLuck(payload.text || payload.fileName);
@@ -367,10 +445,12 @@ function parseArrayManually(arrayStr) {
   }
 }
 
+
 function createPlaceholderStats(payload) {
   const baseLuck = generateDeterministicLuck(payload?.text || payload?.fileName || Date.now().toString());
 
   return {
+    name: payload?.fileName ? String(payload.fileName).replace(/\\/g, "/").split("/").pop().split(".").shift() || "Resume Student" : "Resume Student",
     summary: "LLM API key missing - replace with live response.",
     experience: 0,
     networking: 0,
@@ -378,6 +458,7 @@ function createPlaceholderStats(payload) {
     fillerRatio: 0.4,
     luck: baseLuck,
     gpa: null,
+    major: "Computer Science",
     internships: 0,
     buzzwords: [],
     skills: []

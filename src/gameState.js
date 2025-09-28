@@ -78,28 +78,116 @@ export class GameState {
   /**
    * Add an agent to the grid
    */
-  addAgent(x, y, id = null, isStudent = true) {
+
+  addAgent(x, y, id = null, isStudent = true, options = {}) {
     if (!this.isValidPosition(x, y) || this.grid[y][x].type !== 'walkable') {
       return null;
     }
 
-    // Use provided ID or assign next sequential ID starting from 1
     const agentId = id !== null ? id : this.nextAgentId++;
-    const stats = generateAgentStats(isStudent);
+    const baseStats = generateAgentStats(isStudent);
+    const overrideStats = options?.stats;
+
+    const stats = {
+      ...baseStats,
+      skills: Array.isArray(baseStats.skills) ? [...baseStats.skills] : [],
+      skillsDetailed: Array.isArray(baseStats.skillsDetailed)
+        ? baseStats.skillsDetailed.map(detail => ({ ...detail }))
+        : undefined
+    };
+
+    if (overrideStats && typeof overrideStats === 'object') {
+      Object.assign(stats, overrideStats);
+    }
+
+    const providedSkillDetails = Array.isArray(overrideStats?.skillsDetailed)
+      ? overrideStats.skillsDetailed
+      : stats.skillsDetailed;
+
+    const normalizedSkillDetails = Array.isArray(providedSkillDetails)
+      ? providedSkillDetails
+          .map(detail => {
+            if (!detail) return null;
+            if (typeof detail === 'string') {
+              return { label: detail, score: 0 };
+            }
+            if (typeof detail === 'object') {
+              const label = typeof detail.label === 'string'
+                ? detail.label
+                : typeof detail.name === 'string'
+                ? detail.name
+                : '';
+              if (!label) {
+                return null;
+              }
+              const score = typeof detail.score === 'number' && Number.isFinite(detail.score)
+                ? detail.score
+                : typeof detail.count === 'number' && Number.isFinite(detail.count)
+                ? detail.count
+                : 0;
+              return { label, score };
+            }
+            return null;
+          })
+          .filter(Boolean)
+      : [];
+
+    const normalizedSkillLabels = Array.isArray(overrideStats?.skills)
+      ? overrideStats.skills
+          .map(skill => {
+            if (typeof skill === 'string') {
+              return skill;
+            }
+            if (skill && typeof skill === 'object') {
+              return skill.label || skill.name || '';
+            }
+            return '';
+          })
+          .filter(Boolean)
+      : normalizedSkillDetails.map(skill => skill.label);
+
+    stats.skills = normalizedSkillLabels.length
+      ? normalizedSkillLabels
+      : (Array.isArray(baseStats.skills) ? [...baseStats.skills] : []);
+
+    stats.skillsDetailed = normalizedSkillDetails.length
+      ? normalizedSkillDetails
+      : stats.skills.map(label => ({ label, score: 0 }));
+
+    if (!Array.isArray(stats.buzzwords)) {
+      stats.buzzwords = [];
+    } else {
+      stats.buzzwords = stats.buzzwords.map(item => String(item)).filter(Boolean);
+    }
+
+    stats.summary = typeof stats.summary === 'string' ? stats.summary : '';
+
+    let displayName = '';
+    if (typeof stats.name === 'string') {
+      displayName = stats.name.trim();
+    }
+    if (!displayName) {
+      displayName = isStudent ? `Student ${agentId}` : `Recruiter ${agentId}`;
+    }
+    stats.name = displayName;
+
+    const resumeInsights = options?.resumeData ? { ...options.resumeData } : null;
 
     const agent = {
       id: agentId,
       isStudent: isStudent,
-      stats: stats,
+      stats,
+      resumeInsights,
+      displayName,
       appearance: generateAgentAppearance(isStudent),
       position: [x, y],
       inConversation: false,
       conversationPartner: null,
       conversationId: null,
-      lastConvoCooldown: 0, // Cooldown timer for conversation engagement
-      distanceTraveled: 0, // Track total distance moved
-      recruitersSpokenTo: isStudent ? 0 : null, // Only track for students
-      jobOffers: isStudent ? stats.jobOffers : null, // Placeholder for job offers (students only)
+      lastConvoCooldown: 0,
+      distanceTraveled: 0,
+      recruitersSpokenTo: isStudent ? 0 : null,
+      jobOffers: isStudent ? (stats.jobOffers ?? 0) : null,
       get x() { return this.position[0]; },
       get y() { return this.position[1]; },
       set x(value) { this.position[0] = value; },
@@ -228,6 +316,8 @@ export class GameState {
         recruitersSpokenTo: agent.recruitersSpokenTo,
         jobOffers: agent.jobOffers,
         stats: { ...agent.stats },
+        displayName: agent.displayName,
+        resumeInsights: agent.resumeInsights ? { ...agent.resumeInsights } : null,
         appearance: { ...agent.appearance }
       })),
       frameCount: this.frameCount,

@@ -1,5 +1,29 @@
-﻿const BASE_SKILLS = ["JavaScript", "Python", "React", "Node.js"];
-const MAJORS = ["Computer Science", "Software Engineering", "Data Science"];
+const BASE_SKILLS = ["JavaScript", "Python", "React", "Node.js", "TypeScript", "SQL", "Java", "Go", "Rust", "C++"];
+const MAJORS = ["Computer Science", "Software Engineering", "Data Science", "Information Systems", "Computer Engineering"];
+const STUDENT_SUMMARIES = [
+  "Full-stack student who thrives on hackathon sprints and rapid prototyping.",
+  "Backend-focused engineer blending data pipelines with distributed systems side projects.",
+  "Product-minded developer pairing UX empathy with scalable web architecture.",
+  "Machine learning tinkerer combining research with automation in real-world projects."
+];
+const STUDENT_FIRST_NAMES = ["Avery", "Jordan", "Taylor", "Riley", "Morgan", "Casey", "Elliot", "Hayden", "Parker", "Quinn"];
+const STUDENT_LAST_NAMES = ["Nguyen", "Patel", "Garcia", "O'Neil", "Kim", "Rivera", "Chen", "Johnson", "Williams", "Martinez"];
+const RECRUITER_FIRST_NAMES = ["Alex", "Sam", "Jamie", "Harper", "Logan", "Emerson", "Drew", "Skyler", "Rowan", "Blake"];
+const RECRUITER_LAST_NAMES = ["Brooks", "Henderson", "Lopez", "Mehta", "Fischer", "Khan", "Bennett", "Sawyer", "Diaz", "Coleman"];
+
+const BUZZWORDS = [
+  "cloud-native",
+  "AI",
+  "open source",
+  "automation",
+  "cross-functional",
+  "microservices",
+  "data-driven",
+  "team leadership",
+  "devops",
+  "observability"
+];
+
 const COMPANIES = ["Tech Corp", "StartupXYZ", "Big Tech Inc", "Innovation Labs"];
 const POSITIONS = ["Software Engineer", "Frontend Developer", "Backend Developer", "Full Stack Developer"];
 const PREFERENCES = [
@@ -14,27 +38,70 @@ function randomItem(list) {
   return list[Math.floor(Math.random() * list.length)];
 }
 
-export function generateAgentStats(isStudent) {
-  if (isStudent) {
-    return {
-      gpa: Math.random() * 2 + 2,
-      skills: BASE_SKILLS.slice(0, Math.floor(Math.random() * 4) + 1),
-      experience: Math.floor(Math.random() * 5),
-      major: randomItem(MAJORS),
-      // Placeholder for job offers - will be implemented properly later
-      jobOffers: 0 // 0 job offer
-    };
+function randomInt(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function buildFullName(firstNames, lastNames) {
+  const first = randomItem(firstNames);
+  const last = randomItem(lastNames);
+  return `${first} ${last}`;
+}
+
+function pickSubset(pool, count) {
+  if (!Array.isArray(pool) || pool.length === 0) return [];
+  const available = [...pool];
+  const selection = [];
+  const limit = Math.min(count, available.length);
+  for (let i = 0; i < limit; i++) {
+    const index = randomInt(0, available.length - 1);
+    selection.push(available[index]);
+    available.splice(index, 1);
   }
+  return selection;
+}
+
+function buildStudentStats() {
+  const skillCount = randomInt(2, Math.min(5, BASE_SKILLS.length));
+  const skills = pickSubset(BASE_SKILLS, skillCount);
+  const skillDetails = skills.map(label => ({
+    label,
+    score: randomInt(55, 95)
+  }));
 
   return {
+    name: buildFullName(STUDENT_FIRST_NAMES, STUDENT_LAST_NAMES),
+    gpa: Number((Math.random() * 1.2 + 2.6).toFixed(2)),
+    skills,
+    skillsDetailed: skillDetails,
+    experience: randomInt(0, 4),
+    major: randomItem(MAJORS),
+    networking: randomInt(0, 5),
+    energyScore: randomInt(45, 95),
+    luck: randomInt(25, 95),
+    internships: randomInt(0, 3),
+    buzzwords: pickSubset(BUZZWORDS, randomInt(1, 3)),
+    summary: randomItem(STUDENT_SUMMARIES),
+    fillerRatio: Number((Math.random() * 0.45).toFixed(2)),
+    jobOffers: 0
+  };
+}
+
+function buildRecruiterStats() {
+  return {
+    name: buildFullName(RECRUITER_FIRST_NAMES, RECRUITER_LAST_NAMES),
     company: randomItem(COMPANIES),
     position: randomItem(POSITIONS),
-    requirements: BASE_SKILLS.slice(0, Math.floor(Math.random() * 3) + 1),
-    experienceRequired: Math.floor(Math.random() * 5) + 1,
+    requirements: pickSubset(BASE_SKILLS, randomInt(2, 4)),
+    experienceRequired: randomInt(1, 5),
     lookingFor: {
       company: randomItem(COMPANIES),
       role: randomItem(POSITIONS),
       preferences: randomItem(PREFERENCES)
     }
   };
+}
+
+export function generateAgentStats(isStudent) {
+  return isStudent ? buildStudentStats() : buildRecruiterStats();
 }

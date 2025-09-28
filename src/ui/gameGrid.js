@@ -39,8 +39,8 @@ export class GameGrid {
   /**
    * Add an agent to the game
    */
-  addAgent(x, y, id = null, isStudent = true) {
-    return this.gameState.addAgent(x, y, id, isStudent);
+  addAgent(x, y, id = null, isStudent = true, options = {}) {
+    return this.gameState.addAgent(x, y, id, isStudent, options);
   }
 
   /**

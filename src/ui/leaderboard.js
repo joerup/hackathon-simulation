@@ -119,7 +119,268 @@ export class LeaderboardModal {
     return this.overlay;
   }
 
-  getStudents() {
+  /**
+   * Setup event handlers for modal
+   */
+  setupEventHandlers() {
+    // Click outside to close
+    this.overlay.addEventListener('click', (e) => {
+      if (e.target === this.overlay) {
+        this.close();
+      }
+    });
+
+    // Escape key to close
+    this.escapeHandler = (e) => {
+      if (e.key === 'Escape' && this.isOpen) {
+        this.close();
+      }
+    };
+
+    document.addEventListener('keydown', this.escapeHandler);
+  }
+
+  /**
+   * Create the leaderboard content
+   */
+  createLeaderboardContent() {
+    const title = this.createTitle();
+    const students = this.getStudentData();
+    const statsContainer = this.createStatsSection(students);
+    const tableContainer = this.createTableSection(students);
+
+    this.content.appendChild(title);
+    this.content.appendChild(statsContainer);
+    this.content.appendChild(tableContainer);
+  }
+
+  /**
+   * Create title element
+   */
+  createTitle() {
+    const title = this.createElement('h2', null, {
+      margin: `0 0 ${STYLES.spacing.xl} 0`,
+      fontSize: STYLES.fontSize.xl,
+      fontWeight: '600',
+      color: STYLES.colors.primary,
+      textAlign: 'center'
+    });
+    title.textContent = '🏆 Student Leaderboard';
+    return title;
+  }
+
+  /**
+   * Create stats summary section
+   */
+  createStatsSection(students) {
+    const statsContainer = this.createElement('div', null, {
+      background: STYLES.colors.highlight,
+      borderRadius: '12px',
+      padding: STYLES.spacing.lg,
+      marginBottom: STYLES.spacing.xl,
+      display: 'grid',
+      gridTemplateColumns: 'repeat(4, 1fr)',
+      gap: STYLES.spacing.lg,
+      textAlign: 'center'
+    });
+
+    const totals = this.calculateTotals(students);
+    
+    Object.entries(totals).forEach(([label, value]) => {
+      statsContainer.appendChild(this.createStatCard(label, value));
+    });
+
+    return statsContainer;
+  }
+
+  /**
+   * Calculate totals for stats section
+   */
+  calculateTotals(students) {
+    return {
+      'Total Students': students.length,
+      'Total Conversations': students.reduce((sum, student) => sum + (student.recruitersSpokenTo || 0), 0),
+      'Total Distance': students.reduce((sum, student) => sum + (student.distanceTraveled || 0), 0),
+      'Total Job Offers': students.reduce((sum, student) => sum + (student.jobOffers || 0), 0)
+    };
+  }
+
+  /**
+   * Create stat card
+   */
+  createStatCard(label, value) {
+    const card = this.createElement('div', null, {
+      background: STYLES.colors.cardBackground,
+      padding: STYLES.spacing.md,
+      borderRadius: '8px',
+      border: `1px solid ${STYLES.colors.borderDark}`
+    });
+
+    const valueEl = this.createElement('div', null, {
+      fontSize: STYLES.fontSize.lg,
+      fontWeight: 'bold',
+      color: STYLES.colors.primary,
+      marginBottom: STYLES.spacing.xs
+    });
+    valueEl.textContent = value;
+
+    const labelEl = this.createElement('div', null, {
+      fontSize: STYLES.fontSize.sm,
+      color: STYLES.colors.accent,
+      fontWeight: '500'
+    });
+    labelEl.textContent = label;
+
+    card.appendChild(valueEl);
+    card.appendChild(labelEl);
+    return card;
+  }
+
+  /**
+   * Create table section
+   */
+  createTableSection(students) {
+    const tableContainer = this.createElement('div', null, {
+      background: STYLES.colors.tableBackground,
+      borderRadius: '12px',
+      overflow: 'hidden',
+      border: `1px solid ${STYLES.colors.borderDark}`
+    });
+
+    const table = this.createElement('table', null, {
+      width: '100%',
+      borderCollapse: 'collapse'
+    });
+
+    table.appendChild(this.createTableHeader());
+    table.appendChild(this.createTableBody(students));
+
+    tableContainer.appendChild(table);
+    return tableContainer;
+  }
+
+  /**
+   * Create table header
+   */
+  createTableHeader() {
+    const thead = this.createElement('thead', null, {
+      background: STYLES.colors.highlightHover
+    });
+
+    const headerRow = document.createElement('tr');
+    const headers = ['Rank', 'Name', 'Job Offers', 'Recruiters Talked To', 'Distance Traveled'];
+
+    headers.forEach(headerText => {
+      const isPrimary = headerText === 'Job Offers';
+      const cell = this.createTableCell(headerText, {
+        isHeader: true,
+        isPrimary
+      });
+      headerRow.appendChild(cell);
+    });
+
+    thead.appendChild(headerRow);
+    return thead;
+  }
+
+  /**
+   * Create table body
+   */
+  createTableBody(students) {
+    const tbody = document.createElement('tbody');
+
+    if (students.length === 0) {
+      tbody.appendChild(this.createEmptyRow());
+    } else {
+      students.forEach((student, index) => {
+        tbody.appendChild(this.createStudentRow(student, index));
+      });
+    }
+
+    return tbody;
+  }
+
+  /**
+   * Create empty state row
+   */
+  createEmptyRow() {
+    const row = document.createElement('tr');
+    const cell = this.createTableCell('No students found. Add some students to see the leaderboard!', {
+      centered: true
+    });
+    cell.colSpan = 5;
+    cell.style.padding = STYLES.spacing.xxl;
+    cell.style.fontStyle = 'italic';
+    cell.style.color = STYLES.colors.accent;
+    
+    row.appendChild(cell);
+    return row;
+  }
+
+  /**
+   * Create student row
+   */
+  createStudentRow(student, index) {
+    const row = this.createElement('tr', null, {
+      transition: 'background-color 0.2s ease'
+    });
+
+    // Hover effects
+    row.addEventListener('mouseenter', () => {
+      row.style.backgroundColor = STYLES.colors.highlight;
+    });
+
+    row.addEventListener('mouseleave', () => {
+      row.style.backgroundColor = 'transparent';
+    });
+
+    // Create cells
+    const rankText = this.getRankText(index);
+    const cells = [
+      this.createTableCell(rankText, { bold: true, width: '60px' }),
+      this.createTableCell(this.getStudentDisplayName(student), { bold: true }),
+      this.createTableCell(student.jobOffers || 0, { centered: true, bold: true }),
+      this.createTableCell(student.recruitersSpokenTo || 0, { centered: true }),
+      this.createTableCell(student.distanceTraveled || 0, { centered: true })
+    ];
+
+    cells.forEach(cell => row.appendChild(cell));
+    return row;
+  }
+
+
+  /**
+   * Resolve a student name with sensible fallbacks.
+   */
+  getStudentDisplayName(student) {
+    if (!student) return 'Unknown Student';
+    const rawName = [student.displayName, student.name, student.stats?.name]
+      .map(value => (typeof value === 'string' ? value.trim() : ''))
+      .find(value => value.length);
+    if (rawName) {
+      return rawName;
+    }
+    return `Student ${student.id}`;
+  }
+
+  /**
+   * Get rank text with medals for top 3
+   */
+  getRankText(index) {
+    const rank = index + 1;
+    if (rank === 1) return '🥇 1';
+    if (rank === 2) return '🥈 2';
+    if (rank === 3) return '🥉 3';
+    return rank.toString();
+  }
+
+  /**
+   * Get student data sorted by priority:
+   * 1. Job Offers (primary - most important)
+   * 2. Recruiters Talked To (secondary)  
+   * 3. Distance Traveled (tertiary - tie-breaker)
+   */
+  getStudentData() {
     if (!this.gameGrid) return [];
     const gameState = this.gameGrid.getGameState();
     return gameState.agents.filter(agent => agent.isStudent).sort((a, b) => {

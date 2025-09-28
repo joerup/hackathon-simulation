@@ -292,7 +292,7 @@ export class ChatSidebar {
     `;
 
     const speakerName = document.createElement('span');
-    speakerName.textContent = `${speaker.isStudent ? 'Student' : 'Recruiter'} ${speaker.id}`;
+    speakerName.textContent = this.getAgentDisplayName(speaker);
     speakerName.style.cssText = `
       font-weight: 600;
       color: #3d2f1f;
@@ -629,7 +629,7 @@ export class ChatSidebar {
   updateConversationHeader(conversationGroup, speaker, timestamp) {
     const currentTime = timestamp || Date.now();
     const timeStr = this.formatTime(currentTime);
-    const speakerLabel = speaker.isStudent ? `Student ${speaker.id}` : `Recruiter ${speaker.id}`;
+    const speakerLabel = this.getAgentDisplayName(speaker);
     
     // Update message count
     conversationGroup.messageCountElement.textContent = `${conversationGroup.messageCount} message${conversationGroup.messageCount !== 1 ? 's' : ''}`;
@@ -648,12 +648,27 @@ export class ChatSidebar {
     const title = conversationGroup.header.querySelector('span[style*="font-weight: 600"]');
     if (title && participants && participants.length >= 2) {
       const [agent1, agent2] = participants;
-      const agent1Label = agent1.isStudent ? `Student ${agent1.id}` : `Recruiter ${agent1.id}`;
-      const agent2Label = agent2.isStudent ? `Student ${agent2.id}` : `Recruiter ${agent2.id}`;
+      const agent1Label = this.getAgentDisplayName(agent1);
+      const agent2Label = this.getAgentDisplayName(agent2);
       title.textContent = `${agent1Label} ↔ ${agent2Label}`;
     }
     
     return conversationGroup;
+  }
+
+
+  /**
+   * Get a human-friendly label for an agent.
+   */
+  getAgentDisplayName(agent) {
+    if (!agent) return 'Unknown Agent';
+    const rawName = [agent.displayName, agent.stats?.name]
+      .map(value => (typeof value === 'string' ? value.trim() : ''))
+      .find(value => value.length);
+    if (rawName) {
+      return rawName;
+    }
+    return agent.isStudent ? `Student ${agent.id}` : `Recruiter ${agent.id}`;
   }
 
   /**
