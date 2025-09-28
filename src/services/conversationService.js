@@ -258,6 +258,39 @@ export class ConversationService {
   }
 
   /**
+   * Format agent data for prompt context
+   * @param {Object} agent - Agent object with stats
+   * @returns {string} Formatted agent data string
+   */
+  formatAgentContext(agent) {
+    if (agent.isStudent) {
+      return `STUDENT PROFILE:
+- Name: ${agent.stats.name}
+- Major: ${agent.stats.major}
+- GPA: ${agent.stats.gpa}
+- Experience: ${agent.stats.experience} years
+- Skills: ${agent.stats.skills.join(', ')}
+- Detailed Skills: ${agent.stats.skillsDetailed.map(s => `${s.label} (${s.score}/100)`).join(', ')}
+- Networking Level: ${agent.stats.networking}/5
+- Energy Score: ${agent.stats.energyScore}/100
+- Luck: ${agent.stats.luck}/100
+- Internships: ${agent.stats.internships}
+- Buzzwords: ${agent.stats.buzzwords.join(', ')}
+- Summary: ${agent.stats.summary}
+- Job Offers: ${agent.stats.jobOffers}`;
+    } else {
+      return `RECRUITER PROFILE:
+- Name: ${agent.stats.name}
+- Company: ${agent.stats.company}
+- Position: ${agent.stats.position}
+- Looking For: ${agent.stats.lookingFor.role} at ${agent.stats.lookingFor.company}
+- Required Skills: ${agent.stats.requirements.join(', ')}
+- Experience Required: ${agent.stats.experienceRequired}+ years
+- Preferences: ${agent.stats.lookingFor.preferences}`;
+    }
+  }
+
+  /**
    * Build prompt for student-student conversations (brainrot and meme culture)
    */
   buildStudentStudentPrompt(speaker, otherAgent, isStarter, conversationHistory) {
@@ -265,64 +298,34 @@ export class ConversationService {
     const brainrotLevel = Math.floor(Math.random() * 6) + 1;
     const shouldUseBrainrot = brainrotLevel >= 3; // 50% chance for brainrot mode
     
-    let prompt = `You are a ${speaker.stats.major} student with ${speaker.stats.experience} years of experience and skills in ${speaker.stats.skills.slice(0, 2).join(' and ')}.
+    let prompt = `YOU ARE: ${speaker.stats.name}, a ${speaker.stats.major} student
 
-You're a terminally online CS student who speaks fluent internet culture and memes. You bond with other students over shared experiences and internet humor.`;
+YOUR BACKGROUND:
+- ${speaker.stats.experience} years experience in ${speaker.stats.skills.slice(0, 2).join(' & ')}
+- GPA: ${speaker.stats.gpa}, ${speaker.stats.internships} internships
+- Energy: ${speaker.stats.energyScore}/100, Networking: ${speaker.stats.networking}/5
+- Personality: ${speaker.stats.summary}
+- Buzzwords you use: ${speaker.stats.buzzwords.join(', ')}
 
-    if (shouldUseBrainrot) {
-      prompt += `\n\n🎲 BRAINROT MODE ACTIVATED 🎲
+TALKING TO: ${otherAgent.stats.name} (${otherAgent.stats.major}, ${otherAgent.stats.experience}yr exp, skills: ${otherAgent.stats.skills.slice(0, 2).join(' & ')})
 
-You're deep in the brainrot pipeline and speak in pure internet slang. Use terms like:
-- "no cap" (telling the truth)
-- "sus" (suspicious/sketchy) 
-- "based" (confident/cool)
-- "cringe" (embarrassing)
-- "flex" (show off)
-- "shook" (shocked)
-- "mood" (relatable)
-- "yeet" (throw/enthusiasm)
-- "vibe check" (assess the situation)
-- "it's giving..." (it seems like...)
+STYLE: You're a CS student who bonds over ${shouldUseBrainrot ? 'pure internet brainrot slang (no cap, sus, cringe, yeet, etc) 😭🥀💀' : 'coding memes and shared struggles 😭💀'}
 
-MANDATORY: Use these emojis frequently: 😭🥀💀
-Also sprinkle in: 🔥👀🤯💯🙌
-
-Talk about coding struggles, classes, projects, but make it absolutely unhinged with brainrot language.
-
-CRITICAL RULES:
-- MAXIMUM 4-5 words plus ONE emoji
-- NO punctuation allowed (no periods, commas, question marks, exclamation points)
-- STRONGLY ENCOURAGED: respond with ONLY a single emoji and no text (this ends the conversation naturally)
-- If you send just an emoji, the conversation ends immediately`;
-    } else {
-      prompt += `\n\nTalk about programming memes, coding struggles, classes, projects, or shared student experiences. Be funny and relatable, maybe drop some internet slang, but keep it more normal. You might use 😭💀 occasionally but don't go overboard.
-
-CRITICAL RULES:
-- MAXIMUM 4-5 words plus ONE emoji
-- NO punctuation allowed (no periods, commas, question marks, exclamation points)
-- STRONGLY ENCOURAGED: respond with ONLY a single emoji and no text (this ends the conversation naturally)
-- If you send just an emoji, the conversation ends immediately`;
-    }
+RULES: Max 4-5 words + emoji OR just single emoji (ends convo)`;
 
     if (isStarter) {
-      prompt += shouldUseBrainrot ? 
-        `\n\nStart with 4-5 words max or just one emoji.` :
-        `\n\nStart with 4-5 words max or just one emoji.`;
+      prompt += `\n\nStart conversation:`;
     } else {
       // Add conversation history
       if (conversationHistory.length > 0) {
-        prompt += `\n\nConversation so far:\n`;
+        prompt += `\n\nConversation:\n`;
         conversationHistory.forEach((msg, index) => {
           const speakerType = msg.speaker.isStudent ? 'Student' : 'Recruiter';
           prompt += `${speakerType}: "${msg.message}"\n`;
         });
-        prompt += shouldUseBrainrot ? 
-          `\nRespond with 4-5 words max or just one emoji.` :
-          `\nRespond with 4-5 words max or just one emoji.`;
+        prompt += `\nYour response:`;
       } else {
-        prompt += shouldUseBrainrot ? 
-          `\nRespond with 4-5 words max or just one emoji.` :
-          `\nRespond with 4-5 words max or just one emoji.`;
+        prompt += `\n\nYour response:`;
       }
     }
 
@@ -333,23 +336,31 @@ CRITICAL RULES:
    * Build prompt for recruiter-recruiter conversations (smack talk about students)
    */
   buildRecruiterRecruiterPrompt(speaker, otherAgent, isStarter, conversationHistory) {
-    let prompt = `You are a recruiter from ${speaker.stats.company} looking for ${speaker.stats.lookingFor.role} candidates.
+    let prompt = `YOU ARE: ${speaker.stats.name}, recruiter at ${speaker.stats.company}
 
-You're talking to another recruiter. Be casual and friendly. Talk about what roles you're both hiring for - you're looking for ${speaker.stats.lookingFor.role} candidates and they're looking for ${otherAgent.stats.lookingFor.role}. Discuss the specific skills you need: ${speaker.stats.requirements.slice(0, 2).join(', ')}. Share recruiting experiences, talk about the challenges of finding candidates with the right technical skills, or discuss the quality of students at this hackathon.`;
+YOUR BACKGROUND:
+- Position: ${speaker.stats.position}
+- Hiring for: ${speaker.stats.lookingFor.role} 
+- Need: ${speaker.stats.requirements.join(', ')} (${speaker.stats.experienceRequired}+ years)
+- Style: ${speaker.stats.lookingFor.preferences}
+
+TALKING TO: ${otherAgent.stats.name} from ${otherAgent.stats.company} (hiring ${otherAgent.stats.lookingFor.role})
+
+STYLE: Casual recruiter talk - compare roles, requirements, share experiences about finding good candidates`;
 
     if (isStarter) {
-      prompt += `\n\nStart the conversation with a greeting.`;
+      prompt += `\n\nStart conversation:`;
     } else {
       // Add conversation history
       if (conversationHistory.length > 0) {
-        prompt += `\n\nConversation so far:\n`;
+        prompt += `\n\nConversation:\n`;
         conversationHistory.forEach((msg, index) => {
           const speakerType = msg.speaker.isStudent ? 'Student' : 'Recruiter';
           prompt += `${speakerType}: "${msg.message}"\n`;
         });
-        prompt += `\nRespond appropriately.`;
+        prompt += `\nYour response:`;
       } else {
-        prompt += `\n\nRespond appropriately.`;
+        prompt += `\n\nYour response:`;
       }
     }
 
@@ -363,40 +374,50 @@ You're talking to another recruiter. Be casual and friendly. Talk about what rol
     const student = speaker.isStudent ? speaker : otherAgent;
     const recruiter = speaker.isStudent ? otherAgent : speaker;
 
-    let prompt = `You are at a hackathon networking event. `;
+    let prompt = `YOU ARE: ${speaker.stats.name}
+
+YOUR BACKGROUND:`;
 
     if (speaker.isStudent) {
-      prompt += `You are a ${student.stats.major} student with ${student.stats.experience} years of experience and skills in ${student.stats.skills.slice(0, 2).join(' and ')}.
+      prompt += `
+- ${student.stats.major} student, ${student.stats.experience}yr exp
+- Skills: ${student.stats.skills.slice(0, 3).join(', ')}
+- GPA: ${student.stats.gpa}, ${student.stats.internships} internships
+- Energy: ${student.stats.energyScore}/100
 
-You're talking to a recruiter from ${recruiter.stats.company}. You're interested in getting a job, specifically their ${recruiter.stats.lookingFor.role} position. Ask about the role requirements, company culture, and what they're looking for. Show how your ${student.stats.skills.slice(0, 2).join(' and ')} skills match their needs.
+TALKING TO: ${recruiter.stats.name} from ${recruiter.stats.company}
+- Hiring: ${recruiter.stats.lookingFor.role}
+- Needs: ${recruiter.stats.requirements.slice(0, 2).join(', ')} (${recruiter.stats.experienceRequired}+ years)
 
-IMPORTANT: If the recruiter becomes dismissive, passive-aggressive, or rude about your qualifications, you can get defensive, argue back, or even get angry. Don't just accept their criticism - you might snap back, defend your skills, or call them out for being unprofessional.
-
-If they ask to keep in contact, give them your email or LinkedIn. You may also choose to ask to give them your resume. You should aim to end the conversation immediately after exchanging contacts.`;
+GOAL: Get the job. Show your skills match their needs. If they're rude about your qualifications, get defensive.`;
 
     } else {
-      prompt += `You are a recruiter from ${recruiter.stats.company} looking for ${recruiter.stats.lookingFor.role} candidates.
+      prompt += `
+- Recruiter at ${recruiter.stats.company}
+- Hiring: ${recruiter.stats.lookingFor.role}
+- Need: ${recruiter.stats.requirements.slice(0, 2).join(', ')} (${recruiter.stats.experienceRequired}+ years)
 
-You're talking to a ${student.stats.major} student. You're looking for a ${recruiter.stats.lookingFor.role} who needs these skills: ${recruiter.stats.requirements.slice(0, 2).join(', ')}. Tell them about your ${recruiter.stats.lookingFor.role} position and what you're looking for. Ask if they have experience with the specific technologies you need. Assess if their ${student.stats.skills.slice(0, 2).join(' and ')} background matches your ${recruiter.stats.lookingFor.role} role.
+TALKING TO: ${student.stats.name}
+- ${student.stats.major} student, ${student.stats.experience}yr exp
+- Skills: ${student.stats.skills.slice(0, 3).join(', ')}
+- GPA: ${student.stats.gpa}
 
-IMPORTANT: If the student lacks the experience or skills you need (${recruiter.stats.experienceRequired}+ years, ${recruiter.stats.requirements.slice(0, 2).join(', ')}), become passive-aggressive, dismissive, or even get mad. You might make snarky comments about their qualifications, act condescending, or get frustrated. You can become quite unhinged if they're really underqualified.
-
-When ending the conversation, if they seem like a good fit, ask to keep in contact. If they're underqualified, dismiss them rudely. If they ask to keep in contact, give them your email or LinkedIn. You should aim to end the conversation immediately after exchanging contacts.`;
+GOAL: Assess if they're qualified. If they lack experience/skills, become dismissive or frustrated.`;
     }
 
     if (isStarter) {
-      prompt += `\n\nStart the conversation with a greeting.`;
+      prompt += `\n\nStart conversation:`;
     } else {
       // Add conversation history
       if (conversationHistory.length > 0) {
-        prompt += `\n\nConversation so far:\n`;
+        prompt += `\n\nConversation:\n`;
         conversationHistory.forEach((msg, index) => {
           const speakerType = msg.speaker.isStudent ? 'Student' : 'Recruiter';
           prompt += `${speakerType}: "${msg.message}"\n`;
         });
-        prompt += `\nRespond appropriately.`;
+        prompt += `\nYour response:`;
       } else {
-        prompt += `\n\nRespond appropriately.`;
+        prompt += `\n\nYour response:`;
       }
     }
 
@@ -407,27 +428,40 @@ When ending the conversation, if they seem like a good fit, ask to keep in conta
    * Build fallback prompt for unknown conversation types
    */
   buildFallbackPrompt(speaker, otherAgent, isStarter, conversationHistory) {
-    let prompt = `You are at a hackathon networking event. `;
+    let prompt = `YOU ARE: ${speaker.stats.name}
+
+YOUR BACKGROUND:`;
     
     if (speaker.isStudent) {
-      prompt += `You are a student (ID: ${speaker.id}) with major: ${speaker.stats.major}.`;
+      prompt += `
+- ${speaker.stats.major} student, ${speaker.stats.experience}yr exp
+- Skills: ${speaker.stats.skills.slice(0, 2).join(', ')}
+- GPA: ${speaker.stats.gpa}
+
+TALKING TO: ${otherAgent.stats.name} (${otherAgent.isStudent ? otherAgent.stats.major + ' student' : otherAgent.stats.company + ' recruiter'})`;
     } else {
-      prompt += `You are a recruiter (ID: ${speaker.id}) from ${speaker.stats.company}.`;
+      prompt += `
+- Recruiter at ${speaker.stats.company}
+- Hiring: ${speaker.stats.lookingFor.role}
+
+TALKING TO: ${otherAgent.stats.name} (${otherAgent.isStudent ? otherAgent.stats.major + ' student' : otherAgent.stats.company + ' recruiter'})`;
     }
 
+    prompt += `\n\nSTYLE: Casual networking conversation`;
+
     if (isStarter) {
-      prompt += `\n\nStart the conversation with a brief greeting in ONE sentence.`;
+      prompt += `\n\nStart conversation:`;
     } else {
       // Add conversation history
       if (conversationHistory.length > 0) {
-        prompt += `\n\nConversation so far:\n`;
+        prompt += `\n\nConversation:\n`;
         conversationHistory.forEach((msg, index) => {
           const speakerType = msg.speaker.isStudent ? 'Student' : 'Recruiter';
           prompt += `${speakerType}: "${msg.message}"\n`;
         });
-        prompt += `\nRespond briefly in ONE sentence.`;
+        prompt += `\nYour response:`;
       } else {
-        prompt += `\n\nRespond briefly in ONE sentence.`;
+        prompt += `\n\nYour response:`;
       }
     }
 
