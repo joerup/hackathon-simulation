@@ -443,13 +443,13 @@ button:disabled {
 }
 
 .agent-avatar .agent-label {
-  margin-top: calc(1px * var(--scale));
-  padding: 0 calc(3px * var(--scale));
-  font-size: calc(7px * var(--scale));
+  margin-top: 1px;
+  padding: 0 3px;
+  font-size: 7px;
   font-weight: 700;
   color: #121420;
   background: rgba(255, 255, 255, 0.75);
-  border-radius: calc(6px * var(--scale));
+  border-radius: 6px;
   line-height: 1.2;
 }
 

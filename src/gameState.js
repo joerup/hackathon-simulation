@@ -1,4 +1,7 @@
 import { ConversationState } from './conversationState.js';
+import { generateAgentStats } from './generators/agentStats.js';
+import { generateAgentAppearance } from './generators/agentAppearance.js';
+import { createObstacle, DEFAULT_OBSTACLE_POSITIONS } from './generators/obstacles.js';
 
 /**
  * GameState class - Manages the internal state of the game grid
@@ -48,12 +51,7 @@ export class GameState {
       return false;
     }
 
-    const obstacle = {
-      id: obstacleData.id || `obstacle_${x}_${y}`,
-      x,
-      y,
-      ...obstacleData
-    };
+    const obstacle = createObstacle(x, y, obstacleData);
 
     this.grid[y][x] = {
       type: 'obstacle',
@@ -78,8 +76,8 @@ export class GameState {
     const agent = {
       id: agentId,
       isStudent: isStudent,
-      stats: this.generateAgentStats(isStudent),
-      appearance: this.generateAgentAppearance(isStudent),
+      stats: generateAgentStats(isStudent),
+      appearance: generateAgentAppearance(isStudent),
       position: [x, y],
       inConversation: false,
       conversationPartner: null,
@@ -102,97 +100,6 @@ export class GameState {
     this.conversationState.updateAgentsReference(this.agents);
 
     return agent;
-  }
-
-  /**
-   * Generate stats for agents based on type
-   */
-  generateAgentStats(isStudent) {
-    if (isStudent) {
-      return {
-        gpa: Math.random() * 2 + 2, // 2.0 - 4.0
-        skills: ['JavaScript', 'Python', 'React', 'Node.js'].slice(0, Math.floor(Math.random() * 4) + 1),
-        experience: Math.floor(Math.random() * 5), // 0-4 years
-        major: ['Computer Science', 'Software Engineering', 'Data Science'][Math.floor(Math.random() * 3)]
-      };
-    } else {
-      const companies = ['Tech Corp', 'StartupXYZ', 'Big Tech Inc', 'Innovation Labs'];
-      const positions = ['Software Engineer', 'Frontend Developer', 'Backend Developer', 'Full Stack Developer'];
-      const preferences = [
-        'Looking for candidates with strong problem-solving skills',
-        'Seeking developers with experience in modern frameworks',
-        'Interested in candidates with leadership potential',
-        'Want developers who can work in fast-paced environments',
-        'Looking for team players with good communication skills'
-      ];
-      
-      return {
-        company: companies[Math.floor(Math.random() * companies.length)],
-        position: positions[Math.floor(Math.random() * positions.length)],
-        requirements: ['JavaScript', 'Python', 'React', 'Node.js'].slice(0, Math.floor(Math.random() * 3) + 1),
-        experienceRequired: Math.floor(Math.random() * 5) + 1, // 1-5 years
-        lookingFor: {
-          company: companies[Math.floor(Math.random() * companies.length)],
-          role: positions[Math.floor(Math.random() * positions.length)],
-          preferences: preferences[Math.floor(Math.random() * preferences.length)]
-        }
-      };
-    }
-  }
-
-  /**
-   * Generate appearance for agents based on type
-   */
-  generateAgentAppearance(isStudent) {
-    const pick = (options) => options[Math.floor(Math.random() * options.length)];
-
-    const skinTones = [
-      '#f9d7b9', '#f4c6a5', '#e6b189', '#d29b6d', '#b2784e', '#8d5524'
-    ];
-
-    const studentShirtPalette = [
-      '#ffadad', '#ffd6a5', '#fdffb6', '#caffbf', '#9bf6ff', '#a0c4ff', '#bdb2ff', '#ffc6ff', '#f7b267', '#f48498',
-      '#84dccf', '#95b8d1'
-    ];
-
-    const recruiterShirtPalette = [
-      '#6c8ed4', '#4e6bb1', '#3f5d8b', '#889bb7', '#b0c4de'
-    ];
-
-    const hairStyles = isStudent
-      ? ['beanie', 'curly', 'pigtails', 'bob', 'spiky', 'afro', 'ponytail', 'buzz']
-      : ['sidepart', 'slick', 'short'];
-
-    const hairColors = [
-      '#2b1b10', '#3f2a1a', '#5a3825', '#704214', '#a55728', '#d08159', '#f5e1a4', '#2d4370', '#4b2b5c', '#1f1f1f'
-    ];
-
-    const bodyScales = isStudent ? [0.85, 0.95, 1, 1.08, 1.15] : [0.95, 1, 1.05];
-
-    const accentColors = ['#ffe066', '#ff6b6b', '#4ecdc4', '#48bfe3', '#e599f7', '#ffd166', '#c77dff'];
-
-    const appearance = {
-      skinTone: pick(skinTones),
-      shirtColor: pick(isStudent ? studentShirtPalette : recruiterShirtPalette),
-      hairStyle: pick(hairStyles),
-      hairColor: pick(hairColors),
-      bodyScale: pick(bodyScales),
-      accentColor: pick(accentColors)
-    };
-
-    const faceAccessories = ['none', 'freckles', 'rosyCheeks', 'glasses'];
-    appearance.faceAccessory = pick(faceAccessories);
-
-    const eyeShapes = ['round', 'oval', 'wide'];
-    appearance.eyeShape = pick(eyeShapes);
-
-    const mouthStyles = ['flat', 'smile', 'open'];
-    appearance.mouth = pick(mouthStyles);
-
-    const accentChance = isStudent ? 0.75 : 0.45;
-    appearance.hasAccent = Math.random() < accentChance || appearance.hairStyle === 'beanie';
-
-    return appearance;
   }
 
   /**
@@ -434,21 +341,9 @@ export class GameState {
    * Generate sample obstacles for testing
    */
   generateSampleObstacles() {
-    const obstaclePositions = [
-      { x: 2, y: 3 },
-      { x: 4, y: 1 },
-      { x: 7, y: 6 },
-      { x: 1, y: 8 },
-      { x: 8, y: 2 },
-      { x: 5, y: 7 },
-      { x: 3, y: 5 },
-      { x: 9, y: 4 },
-      { x: 6, y: 9 },
-      { x: 0, y: 5 }
-    ];
-
     const obstacles = [];
-    obstaclePositions.forEach(pos => {
+
+    DEFAULT_OBSTACLE_POSITIONS.forEach(pos => {
       if (this.isValidPosition(pos.x, pos.y) && this.grid[pos.y][pos.x].type === 'walkable') {
         const obstacle = this.addObstacle(pos.x, pos.y, { type: 'wall' });
         if (obstacle) obstacles.push(obstacle);
