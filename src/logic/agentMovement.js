@@ -34,7 +34,6 @@ export function moveAgent(gameState, agent, newX, newY) {
   if (typeof agent.distanceTraveled === 'number') {
     agent.distanceTraveled++;
   }
-  
   return true;
 }
 
