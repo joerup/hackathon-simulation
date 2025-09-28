@@ -14,6 +14,8 @@ export class Modal {
     this.wasSimulationRunning = false;
     this.file = null;
     this.isProcessing = false;
+    this.usingSample = false;
+    this.selectedSampleFile = null;
   }
 
   /**
@@ -91,7 +93,11 @@ export class Modal {
     this.content = document.createElement('div');
     this.content.className = 'modal-content';
     this.content.style.cssText = `
-      margin-right: 2rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      padding-top: 1rem;
     `;
 
     // Create the resume upload content
@@ -139,6 +145,65 @@ export class Modal {
       text-align: center;
     `;
 
+    // Mode selector
+    const modeSelector = document.createElement('div');
+    modeSelector.style.cssText = `
+      display: flex;
+      background: rgba(12, 16, 40, 0.6);
+      border-radius: 10px;
+      padding: 4px;
+      margin-bottom: 1.5rem;
+      width: 100%;
+      max-width: 400px;
+    `;
+
+    const uploadOption = document.createElement('div');
+    uploadOption.textContent = 'Upload Resume';
+    uploadOption.style.cssText = `
+      flex: 1;
+      padding: 0.75rem;
+      text-align: center;
+      background: linear-gradient(140deg, #7088ff, #9d66ff);
+      color: #11152c;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.85rem;
+      transition: all 0.2s ease;
+    `;
+
+    const sampleOption = document.createElement('div');
+    sampleOption.textContent = 'Sample Resume';
+    sampleOption.style.cssText = `
+      flex: 1;
+      padding: 0.75rem;
+      text-align: center;
+      background: transparent;
+      color: #b5bbfa;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.85rem;
+      transition: all 0.2s ease;
+    `;
+
+    modeSelector.appendChild(uploadOption);
+    modeSelector.appendChild(sampleOption);
+
+    // Upload section container
+    const uploadSection = document.createElement('div');
+    uploadSection.style.cssText = `
+      width: 100%;
+      max-width: 400px;
+    `;
+
+    // Sample selection section
+    const sampleSection = document.createElement('div');
+    sampleSection.style.cssText = `
+      width: 100%;
+      max-width: 400px;
+      display: none;
+    `;
 
     // File drop area
     const dropArea = document.createElement('div');
@@ -151,6 +216,8 @@ export class Modal {
       transition: all 0.2s ease;
       cursor: pointer;
       margin-bottom: 1rem;
+      width: 100%;
+      max-width: 400px;
     `;
 
     // File input (hidden)
@@ -194,6 +261,8 @@ export class Modal {
       border-radius: 8px;
       margin-bottom: 1.5rem;
       display: none;
+      width: 100%;
+      max-width: 400px;
     `;
 
     const fileName = document.createElement('div');
@@ -217,6 +286,7 @@ export class Modal {
     analyzeButton.disabled = true;
     analyzeButton.style.cssText = `
       width: 100%;
+      max-width: 400px;
       background: linear-gradient(140deg, #7088ff, #9d66ff);
       color: #11152c;
       border: none;
@@ -275,11 +345,132 @@ export class Modal {
       this.handleAnalyze(analyzeButton, statusMessage);
     });
 
+    // Move upload components to upload section
+    uploadSection.appendChild(dropArea);
+    uploadSection.appendChild(fileInput);
+    uploadSection.appendChild(fileInfo);
+
+    // Create sample resume selection
+    const sampleGrid = document.createElement('div');
+    sampleGrid.style.cssText = `
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+    `;
+
+    // Create sample resume options
+    const sampleResumes = [
+      'sample_resumes-part-1.pdf',
+      'sample_resumes-part-2.pdf',
+      'sample_resumes-part-3.pdf',
+      'sample_resumes-part-4.pdf',
+      'sample_resumes-part-5.pdf',
+      'sample_resumes-part-6.pdf',
+      'sample_resumes-part-7.pdf',
+      'sample_resumes-part-8.pdf',
+      'sample_resumes-part-9.pdf',
+      'sample_resumes-part-10.pdf'
+    ];
+
+    let selectedSampleIndex = null;
+
+    sampleResumes.forEach((resume, index) => {
+      const sampleCard = document.createElement('div');
+      sampleCard.style.cssText = `
+        padding: 1rem;
+        background: rgba(15, 20, 45, 0.3);
+        border: 1px solid rgba(112, 136, 255, 0.3);
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-align: center;
+      `;
+
+      const sampleTitle = document.createElement('div');
+      sampleTitle.textContent = `Resume ${index + 1}`;
+      sampleTitle.style.cssText = `
+        color: #d3d6ff;
+        font-weight: 500;
+        font-size: 0.9rem;
+      `;
+
+      sampleCard.appendChild(sampleTitle);
+
+      sampleCard.addEventListener('click', () => {
+        // Remove selection from other cards
+        sampleGrid.querySelectorAll('div').forEach(card => {
+          card.style.background = 'rgba(15, 20, 45, 0.3)';
+          card.style.borderColor = 'rgba(112, 136, 255, 0.3)';
+        });
+
+        // Select this card
+        sampleCard.style.background = 'rgba(112, 136, 255, 0.2)';
+        sampleCard.style.borderColor = 'rgba(112, 136, 255, 0.6)';
+
+        selectedSampleIndex = index;
+        this.selectedSampleFile = resume;
+
+        // Enable upload button
+        analyzeButton.disabled = false;
+        analyzeButton.style.opacity = '1';
+        analyzeButton.style.cursor = 'pointer';
+      });
+
+      sampleCard.addEventListener('mouseenter', () => {
+        if (selectedSampleIndex !== index) {
+          sampleCard.style.background = 'rgba(15, 20, 45, 0.5)';
+        }
+      });
+
+      sampleCard.addEventListener('mouseleave', () => {
+        if (selectedSampleIndex !== index) {
+          sampleCard.style.background = 'rgba(15, 20, 45, 0.3)';
+        }
+      });
+
+      sampleGrid.appendChild(sampleCard);
+    });
+
+    sampleSection.appendChild(sampleGrid);
+
+    // Toggle functionality
+    uploadOption.addEventListener('click', () => {
+      uploadOption.style.background = 'linear-gradient(140deg, #7088ff, #9d66ff)';
+      uploadOption.style.color = '#11152c';
+      sampleOption.style.background = 'transparent';
+      sampleOption.style.color = '#b5bbfa';
+
+      uploadSection.style.display = 'block';
+      sampleSection.style.display = 'none';
+
+      this.usingSample = false;
+      this.selectedSampleFile = null;
+
+      analyzeButton.disabled = !this.file;
+      analyzeButton.style.opacity = this.file ? '1' : '0.5';
+    });
+
+    sampleOption.addEventListener('click', () => {
+      sampleOption.style.background = 'linear-gradient(140deg, #7088ff, #9d66ff)';
+      sampleOption.style.color = '#11152c';
+      uploadOption.style.background = 'transparent';
+      uploadOption.style.color = '#b5bbfa';
+
+      uploadSection.style.display = 'none';
+      sampleSection.style.display = 'block';
+
+      this.usingSample = true;
+
+      analyzeButton.disabled = !this.selectedSampleFile;
+      analyzeButton.style.opacity = this.selectedSampleFile ? '1' : '0.5';
+    });
+
     // Assemble content
     this.content.appendChild(title);
-    this.content.appendChild(dropArea);
-    this.content.appendChild(fileInput);
-    this.content.appendChild(fileInfo);
+    this.content.appendChild(modeSelector);
+    this.content.appendChild(uploadSection);
+    this.content.appendChild(sampleSection);
     this.content.appendChild(analyzeButton);
     this.content.appendChild(statusMessage);
   }
@@ -306,15 +497,29 @@ export class Modal {
    * Handle resume analysis
    */
   async handleAnalyze(analyzeButton, statusMessage) {
-    if (!this.file || this.isProcessing) return;
+    if ((!this.file && !this.selectedSampleFile) || this.isProcessing) return;
 
     this.isProcessing = true;
     analyzeButton.disabled = true;
     analyzeButton.style.opacity = '0.5';
-    analyzeButton.textContent = 'Submitting...';
+    analyzeButton.textContent = 'Uploading...';
 
     try {
-      const payload = await processResumeFile(this.file);
+      let payload;
+
+      if (this.usingSample && this.selectedSampleFile) {
+        // Handle sample resume - read from file system
+        const fs = require('fs');
+        const path = require('path');
+
+        const filePath = path.join(process.cwd(), 'sample-resumes', this.selectedSampleFile);
+        const fileBuffer = fs.readFileSync(filePath);
+        const file = new File([fileBuffer], this.selectedSampleFile, { type: 'application/pdf' });
+        payload = await processResumeFile(file);
+      } else {
+        // Handle uploaded file
+        payload = await processResumeFile(this.file);
+      }
 
       const stats = await requestResumeStats(payload);
 
@@ -325,6 +530,10 @@ export class Modal {
         if (this.gameGrid) {
           const studentCreated = this.createStudentFromResume(stats);
           if (studentCreated) {
+            // Refresh sidebar if available
+            if (this.gameGrid.sidebar) {
+              this.gameGrid.sidebar.refresh();
+            }
             // Close modal immediately after success
             this.close();
             return;

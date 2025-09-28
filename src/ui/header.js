@@ -23,7 +23,30 @@ export function createHeader(gameGrid = null) {
     box-shadow: 0 2px 20px rgba(0, 0, 0, 0.3);
   `;
 
-  // Create title
+  // Create title with logo
+  const titleContainer = document.createElement('div');
+  titleContainer.style.cssText = `
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  `;
+
+  const logo = document.createElement('div');
+  logo.textContent = 'out';
+  logo.style.cssText = `
+    width: 48px;
+    height: 48px;
+    background: #0a66c2;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #ffffff;
+    font-weight: 900;
+    font-size: 1.3rem;
+    text-transform: lowercase;
+  `;
+
   const title = document.createElement('h1');
   title.textContent = 'LinkedOut';
   title.style.cssText = `
@@ -33,6 +56,9 @@ export function createHeader(gameGrid = null) {
     color: #ffffff;
     letter-spacing: -0.02em;
   `;
+
+  titleContainer.appendChild(logo);
+  titleContainer.appendChild(title);
 
   // Create Add Student button
   const addStudentButton = document.createElement('button');
@@ -65,7 +91,7 @@ export function createHeader(gameGrid = null) {
   });
 
   // Assemble header
-  header.appendChild(title);
+  header.appendChild(titleContainer);
   header.appendChild(addStudentButton);
 
   return header;
