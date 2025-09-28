@@ -418,7 +418,7 @@ export class ChatSidebar {
       this.chatContainer.innerHTML = '';
       this.messageCount = 0;
       this.conversationGroups.clear();
-      
+   
       // Show empty state message when all messages are cleared
       if (this.emptyStateMessage) {
         this.chatContainer.appendChild(this.emptyStateMessage);
@@ -710,6 +710,258 @@ export class ChatSidebar {
     if (this.conversationGroups.size === 0 && this.emptyStateMessage && !this.emptyStateMessage.parentNode) {
       this.chatContainer.appendChild(this.emptyStateMessage);
     }
+  }
+
+  /**
+   * Generate a conversation ID based on speaker and conversation type
+   * This is a fallback method when conversationId is not provided
+   */
+  generateConversationId(speaker, conversationType, timestamp) {
+    // Generate a simple ID based on conversation type and timestamp
+    // This should ideally be coordinated with the conversation service
+    const timeKey = Math.floor(timestamp / 5000) * 5000; // Round to nearest 5 seconds
+    const speakerKey = `${speaker.isStudent ? 's' : 'r'}${speaker.id}`;
+    return `${conversationType}_${speakerKey}_${timeKey}`;
+  }
+
+  /**
+   * Add a complete conversation with multiple messages
+   */
+  addConversation(conversationId, conversationType, messages, participants = null) {
+    if (!this.chatContainer) return;
+
+    // Create conversation group with participant info if available
+    let conversationGroup;
+    if (participants && participants.length >= 2) {
+      conversationGroup = this.createConversationGroupWithParticipants(conversationId, conversationType, participants);
+    } else {
+      conversationGroup = this.createConversationGroup(conversationId, conversationType);
+    }
+    
+    this.conversationGroups.set(conversationId, conversationGroup);
+    this.chatContainer.appendChild(conversationGroup.container);
+
+    // Add all messages to the group
+    messages.forEach((messageData, index) => {
+      const messageElement = this.createMessageElement(
+        messageData.speaker, 
+        messageData.message, 
+        conversationType, 
+        messageData.timestamp
+      );
+      conversationGroup.messagesContainer.appendChild(messageElement);
+      conversationGroup.messageCount++;
+    });
+
+    // Update header
+    conversationGroup.messageCountElement.textContent = `${conversationGroup.messageCount} message${conversationGroup.messageCount !== 1 ? 's' : ''}`;
+
+    // Limit conversations
+    if (this.conversationGroups.size > this.maxConversations) {
+      this.cleanupOldConversations();
+    }
+
+    // Auto-scroll to bottom
+    this.scrollToBottom();
+  }
+
+  /**
+   * Create a conversation group container
+   */
+  createConversationGroup(conversationId, conversationType) {
+    const container = document.createElement('div');
+    container.className = 'conversation-group';
+    container.style.cssText = `
+      border: 1px solid rgba(96, 112, 238, 0.2);
+      border-radius: 12px;
+      overflow: hidden;
+      background: rgba(8, 10, 24, 0.3);
+      transition: all 0.2s ease;
+      flex-shrink: 0;
+    `;
+
+    // Create collapsible header
+    const header = document.createElement('div');
+    header.className = 'conversation-header';
+    header.style.cssText = `
+      padding: 0.75rem;
+      background: rgba(96, 112, 238, 0.1);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      user-select: none;
+      transition: background 0.2s ease;
+    `;
+
+    // Header content
+    const headerContent = document.createElement('div');
+    headerContent.style.cssText = `
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    `;
+
+    // Conversation type icon
+    const typeIcon = document.createElement('span');
+    typeIcon.textContent = this.getConversationTypeIcon(conversationType);
+    typeIcon.style.cssText = `
+      font-size: 1.1rem;
+    `;
+
+    // Conversation title
+    const title = document.createElement('span');
+    title.textContent = this.getConversationTypeLabel(conversationType);
+    title.style.cssText = `
+      font-weight: 600;
+      color: #ffffff;
+      font-size: 0.9rem;
+    `;
+
+    // Message count
+    const messageCount = document.createElement('span');
+    messageCount.textContent = '0 messages';
+    messageCount.style.cssText = `
+      color: #8fa0ff;
+      font-size: 0.8rem;
+      margin-left: 0.5rem;
+    `;
+
+    headerContent.appendChild(typeIcon);
+    headerContent.appendChild(title);
+    headerContent.appendChild(messageCount);
+
+    // Collapse/expand button
+    const toggleButton = document.createElement('span');
+    toggleButton.textContent = '▼';
+    toggleButton.style.cssText = `
+      color: #8fa0ff;
+      font-size: 0.8rem;
+      transition: transform 0.2s ease;
+    `;
+
+    header.appendChild(headerContent);
+    header.appendChild(toggleButton);
+
+    // Messages container
+    const messagesContainer = document.createElement('div');
+    messagesContainer.className = 'conversation-messages';
+    messagesContainer.style.cssText = `
+      padding: 0.5rem;
+      display: none;
+      flex-direction: column;
+      gap: 0.5rem;
+    `;
+
+    // Assemble container
+    container.appendChild(header);
+    container.appendChild(messagesContainer);
+
+    // Add hover effects
+    header.addEventListener('mouseenter', () => {
+      header.style.background = 'rgba(96, 112, 238, 0.2)';
+    });
+
+    header.addEventListener('mouseleave', () => {
+      header.style.background = 'rgba(96, 112, 238, 0.1)';
+    });
+
+    // Add click handler for collapse/expand (start collapsed)
+    let isExpanded = false;
+    toggleButton.textContent = '▶';
+    
+    header.addEventListener('click', () => {
+      isExpanded = !isExpanded;
+      if (isExpanded) {
+        messagesContainer.style.display = 'flex';
+        toggleButton.textContent = '▼';
+        toggleButton.style.transform = 'rotate(0deg)';
+      } else {
+        messagesContainer.style.display = 'none';
+        toggleButton.textContent = '▶';
+        toggleButton.style.transform = 'rotate(0deg)';
+      }
+    });
+
+    return {
+      container,
+      header,
+      messagesContainer,
+      messageCount: 0,
+      messageCountElement: messageCount,
+      conversationId,
+      conversationType,
+      lastActivity: Date.now(),
+      isExpanded: false
+    };
+  }
+
+  /**
+   * Update conversation header with latest message info
+   */
+  updateConversationHeader(conversationGroup, speaker, timestamp) {
+    const timeStr = this.formatTime(timestamp);
+    const speakerLabel = speaker.isStudent ? `Student ${speaker.id}` : `Recruiter ${speaker.id}`;
+    
+    // Update message count
+    conversationGroup.messageCountElement.textContent = `${conversationGroup.messageCount} message${conversationGroup.messageCount !== 1 ? 's' : ''}`;
+    
+    // Update last activity
+    conversationGroup.lastActivity = timestamp;
+  }
+
+  /**
+   * Create a conversation group with participant information
+   */
+  createConversationGroupWithParticipants(conversationId, conversationType, participants) {
+    const conversationGroup = this.createConversationGroup(conversationId, conversationType);
+    
+    // Update header with participant info
+    const title = conversationGroup.header.querySelector('span[style*="font-weight: 600"]');
+    if (title && participants && participants.length >= 2) {
+      const [agent1, agent2] = participants;
+      const agent1Label = agent1.isStudent ? `Student ${agent1.id}` : `Recruiter ${agent1.id}`;
+      const agent2Label = agent2.isStudent ? `Student ${agent2.id}` : `Recruiter ${agent2.id}`;
+      title.textContent = `${agent1Label} ↔ ${agent2Label}`;
+    }
+    
+    return conversationGroup;
+  }
+
+  /**
+   * Get conversation type icon
+   */
+  getConversationTypeIcon(conversationType) {
+    switch (conversationType) {
+      case 'student-student':
+        return '🎓';
+      case 'recruiter-recruiter':
+        return '💼';
+      case 'student-recruiter':
+        return '🤝';
+      default:
+        return '💬';
+    }
+  }
+
+  /**
+   * Clean up old conversations to prevent memory issues
+   */
+  cleanupOldConversations() {
+    if (this.conversationGroups.size <= this.maxConversations) return;
+
+    // Remove oldest conversations
+    const conversations = Array.from(this.conversationGroups.entries());
+    conversations.sort((a, b) => a[1].lastActivity - b[1].lastActivity);
+
+    const toRemove = conversations.slice(0, conversations.length - this.maxConversations);
+    toRemove.forEach(([conversationId, conversationGroup]) => {
+      if (conversationGroup.container.parentNode) {
+        conversationGroup.container.parentNode.removeChild(conversationGroup.container);
+      }
+      this.conversationGroups.delete(conversationId);
+      this.messageCount -= conversationGroup.messageCount;
+    });
   }
 
   /**
