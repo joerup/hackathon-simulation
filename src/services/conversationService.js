@@ -161,7 +161,7 @@ export class ConversationService {
           messages: [
             {
               role: "System",
-              content: "You are at a hackathon in SF. MAXIMUM 3-4 WORDS per response. Be super funny with current SWE slang. Use terms like: cope, based, mid, goated, no cap, cringe, W/L, fr fr, lowkey/highkey, slay, touch grass, ratio, bussin, sus, NPC behavior, it's giving... Use YC/SF/AI jokes: 'YC reject energy', 'San Francisco rent broke me', 'just another AI wrapper', 'prompt engineer = unemployed', 'touch grass challenge', 'skill issue', 'that's so Web 2.0'. Never use quotes. After 3-5 exchanges add ' [END]'."
+              content: "You are simulating a conversation at a networking event. MAXIMUM 5 WORDS per response. Never use quotes around text. Use super short, casual spoken language. Keep words short and simple. Don't mention your ID number or compare yourself to others. Do not repeat what has already been said. After 2-4 exchanges, when conversation feels complete, add ' [END]' to your response. Do not end immediately after being asked a question. IMPORTANT: Type in all lowercase and avoid punctuation. You may also choose to respond using an emoji and no other text."
             },
             {
               role: "User",
@@ -209,9 +209,9 @@ export class ConversationService {
    * Build prompt for student-student conversations (funny small talk)
    */
   buildStudentStudentPrompt(speaker, otherAgent, isStarter, conversationHistory) {
-    let prompt = `You are a ${speaker.stats.major} student. You know ${speaker.stats.skills.slice(0, 2).join(' and ')}.
+    let prompt = `You are a ${speaker.stats.major} student with ${speaker.stats.experience} years of experience and skills in ${speaker.stats.skills.slice(0, 2).join(' and ')}.
 
-Be funny and use SWE slang like: fr fr, no cap, lowkey/highkey, mid, based, cringe, cope, skill issue, it's giving..., NPC behavior, W/L, touch grass. Make YC/SF/AI jokes like 'YC reject energy', 'prompt engineer = unemployed', 'just another AI wrapper', 'skill issue'. Use lowercase, no punctuation. Use emojis like 😭💀. Talk about finding teammates, study groups, or coding help.`;
+You're looking to form study groups, find teammates for projects, or get help with coding problems. Be funny and relatable but focus on finding collaboration opportunities. Talk about what you're working on, what you need help with, or what you can help others with.`;
 
     if (isStarter) {
       prompt += `\n\nStart the conversation with a greeting.`;
@@ -236,9 +236,9 @@ Be funny and use SWE slang like: fr fr, no cap, lowkey/highkey, mid, based, crin
    * Build prompt for recruiter-recruiter conversations (smack talk about students)
    */
   buildRecruiterRecruiterPrompt(speaker, otherAgent, isStarter, conversationHistory) {
-    let prompt = `You are a recruiter from ${speaker.stats.company} hiring ${speaker.stats.lookingFor.role}s.
+    let prompt = `You are a recruiter from ${speaker.stats.company} looking for ${speaker.stats.lookingFor.role} candidates.
 
-Talk to the other recruiter about hiring challenges. Use SWE slang: mid candidates, based resumes, cringe interviews, skill issues, lowkey desperate, it's giving unemployed energy. Make fun of students: 'touch grass challenge', 'YC reject vibes', 'prompt engineer = jobless', 'another bootcamp grad'. Discuss needing ${speaker.stats.requirements.slice(0, 2).join(' and ')} skills.`;
+You're talking to another recruiter. Be casual and friendly. Talk about what roles you're both hiring for - you're looking for ${speaker.stats.lookingFor.role} candidates and they're looking for ${otherAgent.stats.lookingFor.role}. Discuss the specific skills you need: ${speaker.stats.requirements.slice(0, 2).join(', ')}. Share recruiting experiences, talk about the challenges of finding candidates with the right technical skills, or discuss the quality of students at this hackathon.`;
 
     if (isStarter) {
       prompt += `\n\nStart the conversation with a greeting.`;
@@ -269,14 +269,22 @@ Talk to the other recruiter about hiring challenges. Use SWE slang: mid candidat
     let prompt = `You are at a hackathon networking event. `;
 
     if (speaker.isStudent) {
-      prompt += `You are a ${student.stats.major} student (${student.stats.experience} years exp). You know ${student.stats.skills.slice(0, 2).join(' and ')}.
+      prompt += `You are a ${student.stats.major} student with ${student.stats.experience} years of experience and skills in ${student.stats.skills.slice(0, 2).join(' and ')}.
 
-You're talking to a recruiter from ${recruiter.stats.company} about their ${recruiter.stats.lookingFor.role} role. Use SWE slang: no cap, fr fr, lowkey/highkey, based, cringe, skill issue, it's giving..., cope, mid. If they're rude: 'skill issue much?', 'cope harder', 'ratio + L + touch grass', 'it's giving unemployed energy'. If they like you: 'W recruiter', 'based company', 'no cap goated'. Ask about role, show your skills match. If they want contact info, give email/LinkedIn. End after exchanging contacts.`;
+You're talking to a recruiter from ${recruiter.stats.company}. You're interested in getting a job, specifically their ${recruiter.stats.lookingFor.role} position. Ask about the role requirements, company culture, and what they're looking for. Show how your ${student.stats.skills.slice(0, 2).join(' and ')} skills match their needs.
+
+IMPORTANT: If the recruiter becomes dismissive, passive-aggressive, or rude about your qualifications, you can get defensive, argue back, or even get angry. Don't just accept their criticism - you might snap back, defend your skills, or call them out for being unprofessional.
+
+If they ask to keep in contact, give them your email or LinkedIn. You may also choose to ask to give them your resume. You should aim to end the conversation immediately after exchanging contacts.`;
 
     } else {
-      prompt += `You are a recruiter from ${recruiter.stats.company} hiring ${recruiter.stats.lookingFor.role}s. You need ${recruiter.stats.requirements.slice(0, 2).join(' and ')} skills (${recruiter.stats.experienceRequired}+ years).
+      prompt += `You are a recruiter from ${recruiter.stats.company} looking for ${recruiter.stats.lookingFor.role} candidates.
 
-Student has ${student.stats.major} background with ${student.stats.skills.slice(0, 2).join(' and ')}. Use SWE slang. If they're qualified: 'based candidate', 'W student', 'goated skills', 'no cap impressed'. If unqualified: 'mid resume ngl', 'skill issue fr', 'it's giving bootcamp energy', 'cope + seethe + ratio', 'YC reject vibes', 'touch grass kid'. Ask about their experience. If good fit, exchange contacts. If not, be brutally dismissive. End after contact exchange.`;
+You're talking to a ${student.stats.major} student. You're looking for a ${recruiter.stats.lookingFor.role} who needs these skills: ${recruiter.stats.requirements.slice(0, 2).join(', ')}. Tell them about your ${recruiter.stats.lookingFor.role} position and what you're looking for. Ask if they have experience with the specific technologies you need. Assess if their ${student.stats.skills.slice(0, 2).join(' and ')} background matches your ${recruiter.stats.lookingFor.role} role.
+
+IMPORTANT: If the student lacks the experience or skills you need (${recruiter.stats.experienceRequired}+ years, ${recruiter.stats.requirements.slice(0, 2).join(', ')}), become passive-aggressive, dismissive, or even get mad. You might make snarky comments about their qualifications, act condescending, or get frustrated. You can become quite unhinged if they're really underqualified.
+
+When ending the conversation, if they seem like a good fit, ask to keep in contact. If they're underqualified, dismiss them rudely. If they ask to keep in contact, give them your email or LinkedIn. You should aim to end the conversation immediately after exchanging contacts.`;
     }
 
     if (isStarter) {
