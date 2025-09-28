@@ -15,24 +15,9 @@ body {
   overflow-x: hidden;
   overflow-y: auto;
   -webkit-font-smoothing: antialiased;
-}
-
-.background-canvas {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  pointer-events: none;
-  z-index: 0;
-}
-
-.ui-overlay {
-  position: relative;
-  z-index: 1;
   display: flex;
   justify-content: center;
-  padding: 4rem 1.5rem 6rem;
+  align-items: center;
 }
 
 .control-panel {
@@ -275,13 +260,13 @@ button:disabled {
 }
 
 .game-grid-container {
-  margin-top: 2rem;
-  background: rgba(8, 10, 24, 0.82);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 20px;
+  margin: 0;
+  background: transparent;
+  border: none;
+  border-radius: 0;
   padding: 2rem;
-  backdrop-filter: blur(18px);
-  box-shadow: 0 40px 120px rgba(0, 0, 0, 0.45);
+  backdrop-filter: none;
+  box-shadow: none;
 }
 
 .grid-title {

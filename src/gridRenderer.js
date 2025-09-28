@@ -19,11 +19,6 @@ export class GridRenderer {
     this.container = document.createElement('div');
     this.container.className = 'game-grid-container';
 
-    const title = document.createElement('h2');
-    title.textContent = 'Game Arena';
-    title.className = 'grid-title';
-    this.container.appendChild(title);
-
     this.gridElement = document.createElement('div');
     this.gridElement.className = 'game-grid';
     this.gridElement.style.display = 'grid';
@@ -37,11 +32,8 @@ export class GridRenderer {
     this.createGridCells();
     this.container.appendChild(this.gridElement);
 
-    const controls = this.createControls();
-    this.container.appendChild(controls);
-
-    const legend = this.createLegend();
-    this.container.appendChild(legend);
+    // Add resize event listener for responsive design
+    this.setupResizeHandler();
 
     this.isInitialized = true;
     return this.container;
@@ -51,17 +43,21 @@ export class GridRenderer {
    * Create all grid cells
    */
   createGridCells() {
+    // Calculate adaptive cell size based on viewport
+    const cellSize = this.calculateCellSize();
+    const fontSize = Math.max(8, Math.floor(cellSize * 0.4));
+
     for (let y = 0; y < this.gameState.size; y++) {
       for (let x = 0; x < this.gameState.size; x++) {
         const cell = document.createElement('div');
         cell.className = 'grid-cell';
-        cell.style.width = '30px';
-        cell.style.height = '30px';
+        cell.style.width = `${cellSize}px`;
+        cell.style.height = `${cellSize}px`;
         cell.style.border = '1px solid rgba(255, 255, 255, 0.1)';
         cell.style.display = 'flex';
         cell.style.alignItems = 'center';
         cell.style.justifyContent = 'center';
-        cell.style.fontSize = '14px';
+        cell.style.fontSize = `${fontSize}px`;
         cell.style.fontWeight = 'bold';
         cell.style.position = 'relative';
 
@@ -70,6 +66,65 @@ export class GridRenderer {
         this.gridElement.appendChild(cell);
       }
     }
+  }
+
+  /**
+   * Calculate optimal cell size based on viewport dimensions
+   */
+  calculateCellSize() {
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+
+    // Account for padding and margins (reserve some space)
+    const availableWidth = viewportWidth * 0.9;
+    const availableHeight = viewportHeight * 0.9;
+
+    // Calculate max cell size that fits in both dimensions
+    const maxCellWidth = Math.floor(availableWidth / this.gameState.size);
+    const maxCellHeight = Math.floor(availableHeight / this.gameState.size);
+
+    // Use the smaller dimension to ensure grid fits on screen
+    const cellSize = Math.min(maxCellWidth, maxCellHeight);
+
+    // Set minimum and maximum bounds
+    return Math.max(15, Math.min(cellSize, 60));
+  }
+
+  /**
+   * Setup window resize handler for responsive design
+   */
+  setupResizeHandler() {
+    let resizeTimeout;
+
+    const handleResize = () => {
+      // Debounce resize events
+      clearTimeout(resizeTimeout);
+      resizeTimeout = setTimeout(() => {
+        this.resizeGrid();
+      }, 250);
+    };
+
+    window.addEventListener('resize', handleResize);
+
+    // Store reference for cleanup
+    this.resizeHandler = handleResize;
+  }
+
+  /**
+   * Resize the grid cells when window size changes
+   */
+  resizeGrid() {
+    if (!this.gridElement) return;
+
+    const cellSize = this.calculateCellSize();
+    const fontSize = Math.max(8, Math.floor(cellSize * 0.4));
+
+    const cells = this.gridElement.querySelectorAll('.grid-cell');
+    cells.forEach(cell => {
+      cell.style.width = `${cellSize}px`;
+      cell.style.height = `${cellSize}px`;
+      cell.style.fontSize = `${fontSize}px`;
+    });
   }
 
   /**
@@ -160,84 +215,6 @@ export class GridRenderer {
     cell.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
   }
 
-  /**
-   * Create control buttons
-   */
-  createControls() {
-    const controls = document.createElement('div');
-    controls.className = 'grid-controls';
-    controls.style.marginTop = '15px';
-    controls.style.display = 'flex';
-    controls.style.gap = '10px';
-    controls.style.justifyContent = 'center';
-
-    const startButton = document.createElement('button');
-    startButton.textContent = 'Start Simulation';
-    startButton.style.margin = '0';
-    startButton.style.padding = '0.5rem 1rem';
-    startButton.style.fontSize = '0.9rem';
-    startButton.id = 'start-simulation';
-
-    const stopButton = document.createElement('button');
-    stopButton.textContent = 'Stop Simulation';
-    stopButton.style.margin = '0';
-    stopButton.style.padding = '0.5rem 1rem';
-    stopButton.style.fontSize = '0.9rem';
-    stopButton.disabled = true;
-    stopButton.id = 'stop-simulation';
-
-    controls.appendChild(startButton);
-    controls.appendChild(stopButton);
-
-    return controls;
-  }
-
-  /**
-   * Create legend for the grid
-   */
-  createLegend() {
-    const legend = document.createElement('div');
-    legend.className = 'grid-legend';
-    legend.style.marginTop = '15px';
-    legend.style.display = 'flex';
-    legend.style.gap = '20px';
-    legend.style.fontSize = '14px';
-    legend.style.color = '#b5bbfa';
-
-    const items = [
-      { color: 'rgba(255, 100, 100, 0.8)', text: 'Obstacles' },
-      { color: 'rgba(100, 255, 100, 0.8)', text: 'Students' },
-      { color: 'rgba(100, 150, 255, 0.8)', text: 'Recruiters' },
-      { color: 'rgba(255, 255, 100, 0.9)', text: '💬 In Conversation', border: '3px solid rgba(255, 255, 255, 0.8)' },
-      { color: 'rgba(255, 255, 255, 0.05)', text: 'Empty' }
-    ];
-
-    items.forEach(item => {
-      const legendItem = document.createElement('div');
-      legendItem.style.display = 'flex';
-      legendItem.style.alignItems = 'center';
-      legendItem.style.gap = '8px';
-
-      const colorBox = document.createElement('div');
-      colorBox.style.width = '16px';
-      colorBox.style.height = '16px';
-      colorBox.style.backgroundColor = item.color;
-      colorBox.style.border = item.border || '1px solid rgba(255, 255, 255, 0.2)';
-      colorBox.style.borderRadius = '2px';
-      if (item.border) {
-        colorBox.style.boxShadow = '0 0 5px rgba(255, 255, 100, 0.3)';
-      }
-
-      const text = document.createElement('span');
-      text.textContent = item.text;
-
-      legendItem.appendChild(colorBox);
-      legendItem.appendChild(text);
-      legend.appendChild(legendItem);
-    });
-
-    return legend;
-  }
 
   /**
    * Get the container element
@@ -247,21 +224,15 @@ export class GridRenderer {
   }
 
   /**
-   * Get control buttons for external event handling
-   */
-  getControlButtons() {
-    if (!this.container) return { start: null, stop: null };
-    
-    return {
-      start: this.container.querySelector('#start-simulation'),
-      stop: this.container.querySelector('#stop-simulation')
-    };
-  }
-
-  /**
    * Clean up the renderer
    */
   destroy() {
+    // Remove resize event listener
+    if (this.resizeHandler) {
+      window.removeEventListener('resize', this.resizeHandler);
+      this.resizeHandler = null;
+    }
+
     if (this.container && this.container.parentNode) {
       this.container.parentNode.removeChild(this.container);
     }
