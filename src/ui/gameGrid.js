@@ -1,5 +1,7 @@
 import { GameState } from '../gameState.js';
 import { GridRenderer } from '../gridRenderer.js';
+import { getCurrentSpeed } from '../config.js';
+import { createSpeedControl } from './speedControl.js';
 
 /**
  * GameGrid class - Coordinates between game state and rendering
@@ -11,6 +13,7 @@ export class GameGrid {
     this.renderer = new GridRenderer(this.gameState);
     this.animationId = null;
     this.isRunning = false;
+    this.speedControl = null;
     
     // Initialize the game with sample data
     this.initializeGame();
@@ -48,10 +51,11 @@ export class GameGrid {
       // Update the visual display
       this.renderer.updateDisplay();
 
-      // Continue animation after delay
+      // Continue animation after delay using current speed
+      const currentSpeed = getCurrentSpeed();
       setTimeout(() => {
         this.animationId = requestAnimationFrame(animate);
-      }, 1000); // 2 second delay between frames
+      }, currentSpeed.delay);
     };
 
     this.animationId = requestAnimationFrame(animate);
@@ -72,7 +76,20 @@ export class GameGrid {
    * Render the game grid
    */
   render() {
-    return this.renderer.initialize();
+    const container = this.renderer.initialize();
+    
+    // Create and add speed control wheel directly to the container
+    this.speedControl = createSpeedControl(this, container);
+    
+    return container;
+  }
+
+  /**
+   * Update the game speed (called by speed control)
+   */
+  updateGameSpeed() {
+    // The speed will be automatically used in the next setTimeout call
+    // No need to restart the simulation, it will pick up the new speed
   }
 
   /**
@@ -95,6 +112,12 @@ export class GameGrid {
   destroy() {
     this.stopSimulation();
     this.renderer.destroy();
+    
+    // Clean up speed control
+    if (this.speedControl) {
+      this.speedControl.destroy();
+      this.speedControl = null;
+    }
   }
 }
 
