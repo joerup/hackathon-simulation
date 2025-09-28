@@ -37,6 +37,7 @@ export class ConversationService {
       let conversationEnded = false;
       let turnCount = 0;
       const maxTurns = 10; // Strict limit: 10 exchanges max
+      let connectionRequested = false; // Track if recruiter requested connection
 
       while (!conversationEnded && turnCount < maxTurns) {
         let message;
@@ -47,29 +48,39 @@ export class ConversationService {
         if (turnCount === maxTurns - 1) {
           // Generate final message and force ending
           message = await this.generateMessage(currentSpeaker, currentListener, context, isFirstMessage, messages);
-          cleanMessage = message.replace(/\s*\[end\]/gi, '').trim();
-          
+          cleanMessage = message.replace(/\s*\[end\]/gi, '').replace(/\s*\[connect\]/gi, '').trim();
+
           // Generate a brief farewell and force [end]
           const farewells = ["nice meeting you", "see ya", "gotta go", "catch you later", "take care"];
           const farewell = farewells[Math.floor(Math.random() * farewells.length)];
-          
+
           // Use the generated message if it's short, otherwise use farewell
           if (cleanMessage.length <= 15) {
             cleanMessage = `${cleanMessage} [end]`;
           } else {
             cleanMessage = `${farewell} [end]`;
           }
-          
+
           messageEndsConversation = true;
           console.log(`[FORCED END] ${currentSpeaker.isStudent ? 'Student' : 'Recruiter'} ${currentSpeaker.id}: "${cleanMessage.replace(' [end]', '')}"`);
         } else {
           // Normal message generation
           message = await this.generateMessage(currentSpeaker, currentListener, context, isFirstMessage, messages);
-          
+
           // Check if conversation should end (case-insensitive)
           messageEndsConversation = message.toLowerCase().includes('[end]');
-          cleanMessage = message.replace(/\s*\[end\]/gi, '').trim();
-          
+
+          // Check for connection (case-insensitive)
+          const isConnection = message.toLowerCase().includes('[connect]');
+          if (isConnection && !currentSpeaker.isStudent && currentListener.isStudent) {
+            // Recruiter is requesting connection with student
+            connectionRequested = true;
+            console.log(`🤝 CONNECTION REQUESTED! ${currentSpeaker.stats.name} wants to connect with ${currentListener.stats.name}!`);
+          }
+
+          // Clean message by removing both [end] and [connect] tags
+          cleanMessage = message.replace(/\s*\[end\]/gi, '').replace(/\s*\[connect\]/gi, '').trim();
+
           // For student-student conversations, check if message is just a single emoji
           if (currentSpeaker.isStudent && currentListener.isStudent && this.isSingleEmoji(cleanMessage)) {
             messageEndsConversation = true;
@@ -81,7 +92,7 @@ export class ConversationService {
 
         // Show message in chat bubble with longer duration
         const bubbleDuration = 3000; // 3 seconds to read the message
-        const displayMessage = cleanMessage.replace(' [end]', '');
+        const displayMessage = cleanMessage.replace(' [end]', '').replace(' [connect]', '');
         chatBubble.showBubble(currentSpeaker.id, displayMessage, bubbleDuration, currentSpeaker.isStudent);
 
         // Store the message
@@ -104,7 +115,15 @@ export class ConversationService {
           await new Promise(resolve => setTimeout(resolve, bubbleDuration + 500));
         }
       }
-      
+
+      // Check if connection was requested and increment connections at conversation end
+      if (connectionRequested) {
+        const student = agent1.isStudent ? agent1 : agent2;
+        const recruiter = agent1.isStudent ? agent2 : agent1;
+        student.stats.connections = (student.stats.connections || 0) + 1;
+        console.log(`✅ CONNECTION COMPLETED! ${recruiter.stats.name} successfully connected with ${student.stats.name}. Total connections: ${student.stats.connections}`);
+      }
+
       // Store conversation data
       const conversationData = {
         id: conversationId,
@@ -187,7 +206,7 @@ export class ConversationService {
           messages: [
             {
               role: "System",
-              content: "You are simulating a conversation at a networking event. MAXIMUM 5 WORDS per response. Never use quotes around text. Use super short, casual spoken language. Keep words short and simple. Don't mention your ID number or compare yourself to others. Do not repeat what has already been said. After 2-4 exchanges, when conversation feels complete, add ' [END]' to your response. Do not end immediately after being asked a question. IMPORTANT: Type in all lowercase and avoid punctuation. You may also choose to respond using an emoji and no other text."
+              content: "You are simulating a conversation at a networking event. MAXIMUM 5 WORDS per response. Never use quotes around text. Use super short, casual spoken language. Keep words short and simple. Don't mention your ID number or compare yourself to others. Do not repeat what has already been said. After 2-4 exchanges, when conversation feels complete, add ' [END]' to your response. Do not end immediately after being asked a question. IMPORTANT: Type in all lowercase and avoid punctuation. You may also choose to respond using an emoji and no other text. For recruiters: If asking for resume or exchanging contact info with a student, end your message with ' [connect]' (max once per conversation)."
             },
             {
               role: "User",
@@ -271,7 +290,7 @@ export class ConversationService {
 - Internships: ${agent.stats.internships}
 - Buzzwords: ${agent.stats.buzzwords.join(', ')}
 - Summary: ${agent.stats.summary}
-- Job Offers: ${agent.stats.jobOffers}`;
+- Connections: ${agent.stats.connections}`;
     } else {
       return `RECRUITER PROFILE:
 - Name: ${agent.stats.name}
@@ -383,7 +402,11 @@ TALKING TO: ${recruiter.stats.name} from ${recruiter.stats.company}
 - Hiring: ${recruiter.stats.lookingFor.role}
 - Needs: ${recruiter.stats.requirements.slice(0, 2).join(', ')} (${recruiter.stats.experienceRequired}+ years)
 
-GOAL: Get the job. Show your skills match their needs. If they're rude about your qualifications, get defensive.`;
+GOAL: Get the job. Show your skills match their needs. If they're rude about your qualifications, get defensive.
+
+CONVERSATION FLOW:
+- If conversation is going well, you or recruiter may suggest exchanging LinkedIn, resume, or email
+- If recruiter asks for resume/contact info, they can connect with student`;
 
     } else {
       prompt += `
@@ -396,7 +419,12 @@ TALKING TO: ${student.stats.name}
 - Skills: ${student.stats.skills.slice(0, 3).join(', ')}
 - GPA: ${student.stats.gpa}
 
-GOAL: Assess if they're qualified. If they lack experience/skills, become dismissive or frustrated.`;
+GOAL: Assess if they're qualified.
+IMPORTANT: After **1-2** total messages in the conversation, decide whether or not they are qualified.
+They do not need to meet all qualifications but should show potential. Be optimistic.
+If they lack experience/skills, become dismissive or frustrated, and end the conversation quickly.
+If they are a good fit, ask for their resume or exchange contact info by ending your message with ' [connect]' (max once per conversation)
+`;
     }
 
     if (isStarter) {
