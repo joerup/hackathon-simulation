@@ -31,7 +31,7 @@ export class Modal {
       left: 0;
       width: 100%;
       height: 100%;
-      background: rgba(0, 0, 0, 0.7);
+      background: rgba(139, 113, 85, 0.7);
       display: none;
       justify-content: center;
       align-items: center;
@@ -43,16 +43,16 @@ export class Modal {
     this.modal = document.createElement('div');
     this.modal.className = 'modal';
     this.modal.style.cssText = `
-      background: rgba(8, 10, 24, 0.95);
-      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: rgba(253, 250, 245, 0.95);
+      border: 1px solid rgba(139, 113, 85, 0.2);
       border-radius: 16px;
       padding: 2rem;
       min-width: 400px;
       max-width: 500px;
       width: 90%;
-      color: #e4e8ff;
+      color: #5a4a3a;
       position: relative;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+      border: 2px solid rgba(139, 113, 85, 0.3);
       backdrop-filter: blur(20px);
     `;
 
@@ -65,7 +65,7 @@ export class Modal {
       right: 1rem;
       background: none;
       border: none;
-      color: #b5bbfa;
+      color: #8b6f47;
       font-size: 24px;
       cursor: pointer;
       padding: 0;
@@ -141,7 +141,7 @@ export class Modal {
       margin: 0 0 1.5rem 0;
       font-size: 1.5rem;
       font-weight: 600;
-      color: #ffffff;
+      color: #3d2f1f;
       text-align: center;
     `;
 
@@ -149,7 +149,7 @@ export class Modal {
     const modeSelector = document.createElement('div');
     modeSelector.style.cssText = `
       display: flex;
-      background: rgba(12, 16, 40, 0.6);
+      background: rgba(250, 247, 240, 0.8);
       border-radius: 10px;
       padding: 4px;
       margin-bottom: 1.5rem;
@@ -163,8 +163,8 @@ export class Modal {
       flex: 1;
       padding: 0.75rem;
       text-align: center;
-      background: linear-gradient(140deg, #7088ff, #9d66ff);
-      color: #11152c;
+      background: linear-gradient(140deg, #d4a574, #c1955f);
+      color: #3d2f1f;
       border-radius: 6px;
       cursor: pointer;
       font-weight: 600;
@@ -179,7 +179,7 @@ export class Modal {
       padding: 0.75rem;
       text-align: center;
       background: transparent;
-      color: #b5bbfa;
+      color: #8b6f47;
       border-radius: 6px;
       cursor: pointer;
       font-weight: 600;
@@ -208,11 +208,11 @@ export class Modal {
     // File drop area
     const dropArea = document.createElement('div');
     dropArea.style.cssText = `
-      border: 2px dashed rgba(112, 136, 255, 0.3);
+      border: 2px dashed rgba(139, 113, 85, 0.3);
       border-radius: 12px;
       padding: 2rem;
       text-align: center;
-      background: rgba(15, 20, 45, 0.3);
+      background: rgba(250, 247, 240, 0.3);
       transition: all 0.2s ease;
       cursor: pointer;
       margin-bottom: 1rem;
@@ -237,7 +237,7 @@ export class Modal {
     const dropText = document.createElement('div');
     dropText.textContent = 'Click to select or drag & drop your resume';
     dropText.style.cssText = `
-      color: #d3d6ff;
+      color: #5a4a3a;
       font-weight: 500;
       margin-bottom: 0.25rem;
     `;
@@ -245,7 +245,7 @@ export class Modal {
     const dropHint = document.createElement('div');
     dropHint.textContent = 'PDF, DOCX, TXT supported';
     dropHint.style.cssText = `
-      color: #8fa0ff;
+      color: #8b6f47;
       font-size: 0.8rem;
     `;
 
@@ -257,7 +257,7 @@ export class Modal {
     const fileInfo = document.createElement('div');
     fileInfo.style.cssText = `
       padding: 0.75rem;
-      background: rgba(12, 16, 40, 0.5);
+      background: rgba(250, 247, 240, 0.7);
       border-radius: 8px;
       margin-bottom: 1.5rem;
       display: none;
@@ -267,14 +267,14 @@ export class Modal {
 
     const fileName = document.createElement('div');
     fileName.style.cssText = `
-      color: #ffffff;
+      color: #3d2f1f;
       font-weight: 500;
       margin-bottom: 0.25rem;
     `;
 
     const fileSize = document.createElement('div');
     fileSize.style.cssText = `
-      color: #b5bbfa;
+      color: #8b6f47;
       font-size: 0.8rem;
     `;
 
@@ -287,8 +287,8 @@ export class Modal {
     analyzeButton.style.cssText = `
       width: 100%;
       max-width: 400px;
-      background: linear-gradient(140deg, #7088ff, #9d66ff);
-      color: #11152c;
+      background: linear-gradient(140deg, #d4a574, #c1955f);
+      color: #3d2f1f;
       border: none;
       border-radius: 8px;
       padding: 0.75rem 1.5rem;
@@ -307,7 +307,7 @@ export class Modal {
       text-align: center;
       font-size: 0.85rem;
       min-height: 1.2rem;
-      color: #8fa0ff;
+      color: #8b6f47;
     `;
 
     // Event handlers
@@ -315,19 +315,19 @@ export class Modal {
 
     dropArea.addEventListener('dragover', (e) => {
       e.preventDefault();
-      dropArea.style.borderColor = 'rgba(112, 136, 255, 0.6)';
-      dropArea.style.background = 'rgba(15, 20, 45, 0.5)';
+      dropArea.style.borderColor = 'rgba(139, 113, 85, 0.6)';
+      dropArea.style.background = 'rgba(250, 247, 240, 0.5)';
     });
 
     dropArea.addEventListener('dragleave', () => {
-      dropArea.style.borderColor = 'rgba(112, 136, 255, 0.3)';
-      dropArea.style.background = 'rgba(15, 20, 45, 0.3)';
+      dropArea.style.borderColor = 'rgba(139, 113, 85, 0.3)';
+      dropArea.style.background = 'rgba(250, 247, 240, 0.3)';
     });
 
     dropArea.addEventListener('drop', (e) => {
       e.preventDefault();
-      dropArea.style.borderColor = 'rgba(112, 136, 255, 0.3)';
-      dropArea.style.background = 'rgba(15, 20, 45, 0.3)';
+      dropArea.style.borderColor = 'rgba(139, 113, 85, 0.3)';
+      dropArea.style.background = 'rgba(250, 247, 240, 0.3)';
 
       const files = e.dataTransfer.files;
       if (files.length > 0) {
@@ -379,8 +379,8 @@ export class Modal {
       const sampleCard = document.createElement('div');
       sampleCard.style.cssText = `
         padding: 1rem;
-        background: rgba(15, 20, 45, 0.3);
-        border: 1px solid rgba(112, 136, 255, 0.3);
+        background: rgba(250, 247, 240, 0.3);
+        border: 1px solid rgba(139, 113, 85, 0.3);
         border-radius: 8px;
         cursor: pointer;
         transition: all 0.2s ease;
@@ -390,7 +390,7 @@ export class Modal {
       const sampleTitle = document.createElement('div');
       sampleTitle.textContent = `Resume ${index + 1}`;
       sampleTitle.style.cssText = `
-        color: #d3d6ff;
+        color: #5a4a3a;
         font-weight: 500;
         font-size: 0.9rem;
       `;
@@ -400,13 +400,13 @@ export class Modal {
       sampleCard.addEventListener('click', () => {
         // Remove selection from other cards
         sampleGrid.querySelectorAll('div').forEach(card => {
-          card.style.background = 'rgba(15, 20, 45, 0.3)';
-          card.style.borderColor = 'rgba(112, 136, 255, 0.3)';
+          card.style.background = 'rgba(250, 247, 240, 0.3)';
+          card.style.borderColor = 'rgba(139, 113, 85, 0.3)';
         });
 
         // Select this card
-        sampleCard.style.background = 'rgba(112, 136, 255, 0.2)';
-        sampleCard.style.borderColor = 'rgba(112, 136, 255, 0.6)';
+        sampleCard.style.background = 'rgba(184, 158, 130, 0.2)';
+        sampleCard.style.borderColor = 'rgba(139, 113, 85, 0.6)';
 
         selectedSampleIndex = index;
         this.selectedSampleFile = resume;
@@ -419,13 +419,13 @@ export class Modal {
 
       sampleCard.addEventListener('mouseenter', () => {
         if (selectedSampleIndex !== index) {
-          sampleCard.style.background = 'rgba(15, 20, 45, 0.5)';
+          sampleCard.style.background = 'rgba(250, 247, 240, 0.5)';
         }
       });
 
       sampleCard.addEventListener('mouseleave', () => {
         if (selectedSampleIndex !== index) {
-          sampleCard.style.background = 'rgba(15, 20, 45, 0.3)';
+          sampleCard.style.background = 'rgba(250, 247, 240, 0.3)';
         }
       });
 
@@ -436,10 +436,10 @@ export class Modal {
 
     // Toggle functionality
     uploadOption.addEventListener('click', () => {
-      uploadOption.style.background = 'linear-gradient(140deg, #7088ff, #9d66ff)';
-      uploadOption.style.color = '#11152c';
+      uploadOption.style.background = 'linear-gradient(140deg, #d4a574, #c1955f)';
+      uploadOption.style.color = '#3d2f1f';
       sampleOption.style.background = 'transparent';
-      sampleOption.style.color = '#b5bbfa';
+      sampleOption.style.color = '#8b6f47';
 
       uploadSection.style.display = 'block';
       sampleSection.style.display = 'none';
@@ -452,10 +452,10 @@ export class Modal {
     });
 
     sampleOption.addEventListener('click', () => {
-      sampleOption.style.background = 'linear-gradient(140deg, #7088ff, #9d66ff)';
-      sampleOption.style.color = '#11152c';
+      sampleOption.style.background = 'linear-gradient(140deg, #d4a574, #c1955f)';
+      sampleOption.style.color = '#3d2f1f';
       uploadOption.style.background = 'transparent';
-      uploadOption.style.color = '#b5bbfa';
+      uploadOption.style.color = '#8b6f47';
 
       uploadSection.style.display = 'none';
       sampleSection.style.display = 'block';
@@ -525,7 +525,7 @@ export class Modal {
 
       if (stats.summary.startsWith("❌") || stats.summary.startsWith("⚠️")) {
         statusMessage.textContent = 'Analysis completed with issues';
-        statusMessage.style.color = '#ff8e8e';
+        statusMessage.style.color = '#d67d3e';
       } else {
         if (this.gameGrid) {
           const studentCreated = this.createStudentFromResume(stats);
@@ -539,17 +539,17 @@ export class Modal {
             return;
           } else {
             statusMessage.textContent = 'No available positions in arena';
-            statusMessage.style.color = '#ff8e8e';
+            statusMessage.style.color = '#d67d3e';
           }
         } else {
           statusMessage.textContent = 'Game not available';
-          statusMessage.style.color = '#ff8e8e';
+          statusMessage.style.color = '#d67d3e';
         }
       }
     } catch (error) {
       console.error("Resume analysis failed", error);
       statusMessage.textContent = 'Analysis failed. Check console for details.';
-      statusMessage.style.color = '#ff8e8e';
+      statusMessage.style.color = '#d67d3e';
     } finally {
       this.isProcessing = false;
       analyzeButton.disabled = false;

@@ -1,5 +1,5 @@
 :root {
-  color-scheme: dark;
+  color-scheme: light;
   font-family: "Inter", Arial, sans-serif;
 }
 
@@ -10,8 +10,8 @@
 body {
   margin: 0;
   min-height: 100vh;
-  background-color: #000;
-  color: #e4e8ff;
+  background-color: #faf7f2;
+  color: #5a4a3a;
   overflow-x: hidden;
   overflow-y: auto;
   -webkit-font-smoothing: antialiased;
@@ -23,59 +23,59 @@ body {
 .control-panel {
   max-width: 780px;
   width: 100%;
-  background: rgba(8, 10, 24, 0.82);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(253, 250, 245, 0.92);
+  border: 1px solid rgba(139, 113, 85, 0.15);
   border-radius: 20px;
   padding: 2.4rem 2.6rem;
   backdrop-filter: blur(18px);
-  box-shadow: 0 40px 120px rgba(0, 0, 0, 0.45);
+  box-shadow: 0 40px 120px rgba(139, 113, 85, 0.15);
 }
 
 .control-panel h1 {
   margin: 0 0 0.4rem;
   font-size: 2.3rem;
   font-weight: 700;
-  color: #ffffff;
+  color: #3d2f1f;
 }
 
 .control-panel p {
   margin: 0 0 1.4rem;
   line-height: 1.55;
-  color: #b5bbfa;
+  color: #6b5b4b;
 }
 
 .control-panel p.helper {
   margin-top: -0.6rem;
   margin-bottom: 1.6rem;
   font-size: 0.98rem;
-  color: #8791f9;
+  color: #8b6f47;
 }
 
 label {
   display: block;
   font-weight: 600;
   margin-bottom: 0.55rem;
-  color: #d3d6ff;
+  color: #4a3a2a;
   letter-spacing: 0.45px;
 }
 
 .file-input-wrapper {
   position: relative;
-  background: rgba(12, 16, 40, 0.9);
-  border: 1px dashed rgba(91, 115, 255, 0.4);
+  background: rgba(250, 247, 240, 0.9);
+  border: 1px dashed rgba(139, 113, 85, 0.4);
   border-radius: 14px;
   padding: 1.4rem 1.2rem;
   transition: border 0.18s ease;
 }
 
 .file-input-wrapper:focus-within {
-  border-color: rgba(119, 149, 255, 0.85);
-  box-shadow: 0 0 0 3px rgba(106, 133, 255, 0.18);
+  border-color: rgba(139, 113, 85, 0.85);
+  box-shadow: 0 0 0 3px rgba(139, 113, 85, 0.18);
 }
 
 .file-input {
   width: 100%;
-  color: #e5e8ff;
+  color: #5a4a3a;
   background: transparent;
   border: none;
   font-size: 1rem;
@@ -83,10 +83,10 @@ label {
 
 .file-input::file-selector-button {
   margin-right: 1rem;
-  background: rgba(119, 131, 255, 0.16);
-  border: 1px solid rgba(137, 150, 255, 0.5);
+  background: rgba(184, 158, 130, 0.16);
+  border: 1px solid rgba(139, 113, 85, 0.5);
   border-radius: 999px;
-  color: #d0d5ff;
+  color: #5a4a3a;
   padding: 0.55rem 1.4rem;
   font-weight: 600;
   cursor: pointer;
@@ -94,20 +94,20 @@ label {
 }
 
 .file-input::file-selector-button:hover {
-  background: rgba(139, 151, 255, 0.25);
+  background: rgba(184, 158, 130, 0.25);
   transform: translateY(-1px);
 }
 
 .file-meta {
   margin: 0.75rem 0 0;
   font-size: 0.9rem;
-  color: #9aa5ff;
+  color: #8b6f47;
 }
 
 .file-hint {
   margin: 0.9rem 0 1.6rem;
   font-size: 0.92rem;
-  color: #7c87e6;
+  color: #a08866;
 }
 
 button {
@@ -115,8 +115,8 @@ button {
   display: inline-flex;
   align-items: center;
   gap: 0.6rem;
-  background: linear-gradient(140deg, #7088ff, #9d66ff);
-  color: #11152c;
+  background: linear-gradient(140deg, #d4a574, #c1955f);
+  color: #3d2f1f;
   border: none;
   border-radius: 999px;
   padding: 0.78rem 1.95rem;
@@ -128,7 +128,7 @@ button {
 
 button:hover:not(.loading):not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 18px 42px rgba(100, 115, 255, 0.3);
+  box-shadow: 0 18px 42px rgba(184, 158, 130, 0.3);
 }
 
 button:disabled {
@@ -139,11 +139,11 @@ button:disabled {
 .status-message {
   margin: 0.8rem 0 0;
   font-size: 0.9rem;
-  color: #9aa0ff;
+  color: #8b6f47;
 }
 
 .status-message.warning {
-  color: #ff8e8e;
+  color: #d67d3e;
 }
 
 .results {
@@ -154,11 +154,11 @@ button:disabled {
 }
 
 .summary-card {
-  background: rgba(12, 16, 40, 0.7);
-  border: 1px solid rgba(96, 112, 238, 0.2);
+  background: rgba(250, 247, 240, 0.7);
+  border: 1px solid rgba(139, 113, 85, 0.2);
   border-radius: 14px;
   padding: 1.2rem 1.4rem 1.4rem;
-  color: #dfe4ff;
+  color: #5a4a3a;
 }
 
 .summary-card h2 {
@@ -171,7 +171,7 @@ button:disabled {
 .summary-card p {
   margin: 0;
   line-height: 1.6;
-  color: #b9c0ff;
+  color: #6b5b4b;
 }
 
 .stat-grid {
@@ -181,8 +181,8 @@ button:disabled {
 }
 
 .stat {
-  background: rgba(23, 28, 68, 0.82);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(248, 245, 238, 0.82);
+  border: 1px solid rgba(139, 113, 85, 0.15);
   border-radius: 14px;
   padding: 1.05rem 1.1rem;
   position: relative;
@@ -192,7 +192,7 @@ button:disabled {
   margin: 0 0 0.4rem;
   font-size: 0.9rem;
   font-weight: 600;
-  color: #8fa0ff;
+  color: #8b6f47;
   letter-spacing: 0.6px;
   text-transform: uppercase;
 }
@@ -201,7 +201,7 @@ button:disabled {
   margin: 0;
   font-size: 2.05rem;
   font-weight: 700;
-  color: #ffffff;
+  color: #3d2f1f;
 }
 
 .stat span {
@@ -210,7 +210,7 @@ button:disabled {
   font-size: 0.76rem;
   text-transform: uppercase;
   letter-spacing: 0.42px;
-  color: #7f88d2;
+  color: #a08866;
 }
 
 .resume-flags h2,
@@ -218,7 +218,7 @@ button:disabled {
   margin: 0;
   font-size: 1.12rem;
   font-weight: 600;
-  color: #dfe4ff;
+  color: #5a4a3a;
   letter-spacing: 0.3px;
 }
 
@@ -234,11 +234,11 @@ button:disabled {
 
 .resume-flags li,
 .skill-breakdown li {
-  background: rgba(12, 16, 40, 0.68);
-  border: 1px solid rgba(74, 94, 255, 0.26);
+  background: rgba(250, 247, 240, 0.68);
+  border: 1px solid rgba(139, 113, 85, 0.26);
   border-radius: 10px;
   padding: 0.72rem 0.95rem;
-  color: #e4e8ff;
+  color: #5a4a3a;
   display: flex;
   justify-content: space-between;
   gap: 0.85rem;
@@ -246,17 +246,17 @@ button:disabled {
 
 .skill-breakdown li span:last-child {
   font-variant-numeric: tabular-nums;
-  color: #9da8ff;
+  color: #8b6f47;
 }
 
 .note {
   font-size: 0.86rem;
-  color: #9399d3;
+  color: #8b6f47;
   margin: 0.3rem 0 0;
 }
 
 .note.warning {
-  color: #ff9090;
+  color: #d67d3e;
 }
 
 .game-grid-container {
@@ -273,7 +273,7 @@ button:disabled {
   margin: 0 0 1.5rem;
   font-size: 1.8rem;
   font-weight: 700;
-  color: #ffffff;
+  color: #3d2f1f;
   text-align: center;
 }
 

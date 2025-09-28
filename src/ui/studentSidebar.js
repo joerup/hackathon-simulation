@@ -23,13 +23,12 @@ export class StudentSidebar {
       left: 0;
       width: 300px;
       height: calc(100vh - 60px);
-      background: rgba(8, 10, 24, 0.95);
-      border-right: 1px solid rgba(255, 255, 255, 0.1);
+      background: rgba(253, 250, 245, 0.95);
+      border-right: 2px solid rgba(139, 113, 85, 0.4);
       backdrop-filter: blur(20px);
       z-index: 50;
       overflow-y: auto;
       padding: 1.5rem;
-      box-shadow: 2px 0 20px rgba(0, 0, 0, 0.3);
     `;
 
     // Students container
@@ -63,8 +62,8 @@ export class StudentSidebar {
     const card = document.createElement('div');
     card.className = 'student-card';
     card.style.cssText = `
-      background: rgba(12, 16, 40, 0.6);
-      border: 1px solid rgba(96, 112, 238, 0.2);
+      background: rgba(250, 247, 240, 0.6);
+      border: 1px solid rgba(139, 113, 85, 0.2);
       border-radius: 12px;
       padding: 1rem;
       transition: all 0.2s ease;
@@ -83,7 +82,7 @@ export class StudentSidebar {
     studentId.textContent = `Student ${agent.id}`;
     studentId.style.cssText = `
       font-weight: 600;
-      color: #ffffff;
+      color: #3d2f1f;
       font-size: 0.95rem;
     `;
 
@@ -128,7 +127,7 @@ export class StudentSidebar {
       skillsHeader.textContent = 'Skills';
       skillsHeader.style.cssText = `
         font-weight: 500;
-        color: #d3d6ff;
+        color: #5a4a3a;
         font-size: 0.8rem;
         margin-top: 0.5rem;
         margin-bottom: 0.25rem;
@@ -147,8 +146,8 @@ export class StudentSidebar {
         const skillTag = document.createElement('span');
         skillTag.textContent = skill;
         skillTag.style.cssText = `
-          background: rgba(112, 136, 255, 0.2);
-          color: #b5bbfa;
+          background: rgba(184, 158, 130, 0.2);
+          color: #8b6f47;
           padding: 0.2rem 0.5rem;
           border-radius: 6px;
           font-size: 0.7rem;
@@ -167,13 +166,13 @@ export class StudentSidebar {
 
     // Add hover effect
     card.addEventListener('mouseenter', () => {
-      card.style.background = 'rgba(12, 16, 40, 0.8)';
-      card.style.borderColor = 'rgba(96, 112, 238, 0.4)';
+      card.style.background = 'rgba(250, 247, 240, 0.8)';
+      card.style.borderColor = 'rgba(139, 113, 85, 0.4)';
     });
 
     card.addEventListener('mouseleave', () => {
-      card.style.background = 'rgba(12, 16, 40, 0.6)';
-      card.style.borderColor = 'rgba(96, 112, 238, 0.2)';
+      card.style.background = 'rgba(250, 247, 240, 0.6)';
+      card.style.borderColor = 'rgba(139, 113, 85, 0.2)';
     });
 
     return card;
@@ -193,7 +192,7 @@ export class StudentSidebar {
     const labelElement = document.createElement('span');
     labelElement.textContent = label;
     labelElement.style.cssText = `
-      color: #8fa0ff;
+      color: #8b6f47;
       font-size: 0.8rem;
       font-weight: 500;
     `;
@@ -201,7 +200,7 @@ export class StudentSidebar {
     const valueElement = document.createElement('span');
     valueElement.textContent = value;
     valueElement.style.cssText = `
-      color: #e4e8ff;
+      color: #5a4a3a;
       font-size: 0.8rem;
       font-weight: 600;
     `;
@@ -229,11 +228,11 @@ export class StudentSidebar {
       const emptyMessage = document.createElement('div');
       emptyMessage.textContent = 'No students in the arena yet';
       emptyMessage.style.cssText = `
-        color: #8fa0ff;
+        color: #8b6f47;
         font-style: italic;
         text-align: center;
         padding: 2rem 1rem;
-        border: 1px dashed rgba(96, 112, 238, 0.3);
+        border: 1px dashed rgba(139, 113, 85, 0.3);
         border-radius: 8px;
       `;
       this.studentsContainer.appendChild(emptyMessage);
