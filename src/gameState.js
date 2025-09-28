@@ -1,3 +1,5 @@
+import { ConversationState } from './conversationState.js';
+
 /**
  * GameState class - Manages the internal state of the game grid
  * Completely separated from rendering logic
@@ -8,6 +10,8 @@ export class GameState {
     this.grid = this.initializeGrid();
     this.agents = [];
     this.frameCount = 0;
+    this.nextAgentId = 1; // Start agent IDs from 1
+    this.conversationState = new ConversationState(this.agents);
   }
 
   /**
@@ -59,14 +63,19 @@ export class GameState {
       return null;
     }
 
+    // Use provided ID or assign next sequential ID starting from 1
+    const agentId = id !== null ? id : this.nextAgentId++;
+
     const agent = {
-      id: id || this.agents.length,
+      id: agentId,
       isStudent: isStudent,
       stats: this.generateAgentStats(isStudent),
       appearance: this.generateAgentAppearance(isStudent),
       position: [x, y],
       inConversation: false,
       conversationPartner: null,
+      conversationId: null,
+      lastConvoCooldown: 0, // Cooldown timer for conversation engagement
       get x() { return this.position[0]; },
       get y() { return this.position[1]; },
       set x(value) { this.position[0] = value; },
@@ -79,6 +88,9 @@ export class GameState {
       agent,
       obstacle: null
     };
+
+    // Update conversation state with new agents reference
+    this.conversationState.updateAgentsReference(this.agents);
 
     return agent;
   }
@@ -102,7 +114,12 @@ export class GameState {
         experienceRequired: Math.floor(Math.random() * 5) + 1 // 1-5 years
       };
     }
-  }  generateAgentAppearance(isStudent) {
+  }
+
+  /**
+   * Generate appearance for agents based on type
+   */
+  generateAgentAppearance(isStudent) {
     const pick = (options) => options[Math.floor(Math.random() * options.length)];
 
     const skinTones = [
@@ -191,7 +208,7 @@ export class GameState {
    * Move an agent to a new position
    */
   moveAgent(agent, newX, newY) {
-    if (agent.inConversation) return false;
+    if (this.conversationState.isAgentInConversation(agent.id)) return false;
     if (!this.isValidPosition(newX, newY)) return false;
     if (this.grid[newY][newX].type !== 'walkable') return false;
 
@@ -222,7 +239,7 @@ export class GameState {
    * Move agent to a random adjacent walkable position
    */
   moveAgentRandomly(agent) {
-    if (agent.inConversation) return false;
+    if (this.conversationState.isAgentInConversation(agent.id)) return false;
 
     const adjacentPositions = this.getAdjacentPositions(agent.x, agent.y);
     const walkablePositions = adjacentPositions.filter(pos => 
@@ -250,21 +267,20 @@ export class GameState {
   checkForConversations() {
     // Single linear scan through all agents
     for (let agent of this.agents) {
-      // Skip agents already in conversation
-      if (agent.inConversation) continue;
+      // Skip agents already in conversation or on cooldown
+      if (this.conversationState.isAgentInConversation(agent.id) || agent.lastConvoCooldown > 0) continue;
 
       // Check 4 cardinal neighbors for available agents
       const neighbors = this.getAdjacentPositions(agent.x, agent.y);
       for (let neighbor of neighbors) {
         const otherAgent = this.findAgentAt(neighbor.x, neighbor.y);
         
-        // If we found an agent at this neighbor position who isn't in conversation
-        if (otherAgent && !otherAgent.inConversation) {
-          // Start conversation between these two agents
-          agent.inConversation = true;
-          otherAgent.inConversation = true;
-          agent.conversationPartner = otherAgent.id;
-          otherAgent.conversationPartner = agent.id;
+        // If we found an agent at this neighbor position who isn't in conversation and not on cooldown
+        if (otherAgent && 
+            !this.conversationState.isAgentInConversation(otherAgent.id) && 
+            otherAgent.lastConvoCooldown === 0) {
+          // Create conversation between these two agents
+          this.conversationState.createConversation(agent, otherAgent);
 
           // Mark agents as obstacles while in conversation
           this.grid[agent.y][agent.x].type = 'agent';
@@ -278,30 +294,19 @@ export class GameState {
   }
 
   /**
-   * Handle existing conversations (10% chance to end)
+   * Handle existing conversations using the global conversation state
    */
   handleConversations() {
-    const conversationPairs = new Set();
-
-    this.agents.forEach(agent => {
-      if (agent.inConversation && !conversationPairs.has(agent.id)) {
-        const partner = this.agents.find(a => a.id === agent.conversationPartner);
-
-        if (partner) {
-          // 10% chance to end conversation
-          if (Math.random() < 0.1) {
-            agent.inConversation = false;
-            partner.inConversation = false;
-            delete agent.conversationPartner;
-            delete partner.conversationPartner;
-          }
-
-          // Mark both as processed
-          conversationPairs.add(agent.id);
-          conversationPairs.add(partner.id);
-        }
-      }
-    });
+    // Process all conversations (check for ending, update duration, etc.)
+    this.conversationState.processConversations();
+    
+    // Synchronize agent states with conversation state
+    this.conversationState.synchronizeAgentStates();
+    
+    // Clean up old conversations periodically
+    if (this.frameCount % 60 === 0) { // Every 60 frames
+      this.conversationState.cleanup();
+    }
   }
 
   /**
@@ -309,6 +314,13 @@ export class GameState {
    */
   processFrame() {
     this.frameCount++;
+
+    // Decrement cooldown timers for all agents
+    this.agents.forEach(agent => {
+      if (agent.lastConvoCooldown > 0) {
+        agent.lastConvoCooldown--;
+      }
+    });
 
     // First check for new conversations
     this.checkForConversations();
@@ -340,10 +352,41 @@ export class GameState {
         position: [...agent.position],
         inConversation: agent.inConversation,
         conversationPartner: agent.conversationPartner,
-        stats: { ...agent.stats }
+        conversationId: agent.conversationId,
+        lastConvoCooldown: agent.lastConvoCooldown,
+        stats: { ...agent.stats },
+        appearance: { ...agent.appearance }
       })),
-      frameCount: this.frameCount
+      frameCount: this.frameCount,
+      conversations: this.conversationState.getSnapshot()
     };
+  }
+
+  /**
+   * Get the conversation state for external access
+   */
+  getConversationState() {
+    return this.conversationState;
+  }
+
+  /**
+   * Get the next available agent ID
+   */
+  getNextAgentId() {
+    return this.nextAgentId;
+  }
+
+  /**
+   * Get information about all agents (for debugging)
+   */
+  getAgentsInfo() {
+    return this.agents.map(agent => ({
+      id: agent.id,
+      isStudent: agent.isStudent,
+      position: [...agent.position],
+      inConversation: agent.inConversation,
+      lastConvoCooldown: agent.lastConvoCooldown
+    }));
   }
 
   /**
@@ -391,6 +434,3 @@ export class GameState {
     return obstacles;
   }
 }
-
-
-

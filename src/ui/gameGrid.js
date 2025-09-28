@@ -51,7 +51,7 @@ export class GameGrid {
       // Continue animation after delay
       setTimeout(() => {
         this.animationId = requestAnimationFrame(animate);
-      }, 2000); // 2 second delay between frames
+      }, 1000); // 2 second delay between frames
     };
 
     this.animationId = requestAnimationFrame(animate);
@@ -102,30 +102,15 @@ export function initGameGrid(size = 10) {
   const gameGrid = new GameGrid(size);
 
   // Add recruiters (no students initially)
-  gameGrid.addAgent(8, 1, 5, false); // Recruiter
-  gameGrid.addAgent(1, 6, 6, false); // Recruiter
-  gameGrid.addAgent(7, 8, 7, false); // Recruiter
+  gameGrid.addAgent(8, 1, null, false); // Recruiter (will get ID 1)
+  gameGrid.addAgent(1, 6, null, false); // Recruiter (will get ID 2)
+  gameGrid.addAgent(7, 8, null, false); // Recruiter (will get ID 3)
 
   // Initialize the renderer (this creates the DOM elements)
   gameGrid.render();
-  
-  // Set up control button event handlers
-  const renderer = gameGrid.getRenderer();
-  const controls = renderer.getControlButtons();
-  
-  if (controls.start && controls.stop) {
-    controls.start.onclick = () => {
-      gameGrid.startSimulation();
-      controls.start.disabled = true;
-      controls.stop.disabled = false;
-    };
 
-    controls.stop.onclick = () => {
-      gameGrid.stopSimulation();
-      controls.start.disabled = false;
-      controls.stop.disabled = true;
-    };
-  }
+  // Auto-start the simulation
+  gameGrid.startSimulation();
 
   return gameGrid;
 }
