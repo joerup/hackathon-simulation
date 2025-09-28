@@ -162,6 +162,8 @@ export class Modal {
   async analyze() {
     if ((!this.file && !this.selectedSampleFile) || this.isProcessing) return;
 
+    console.log('🚀 [RESUME UPLOAD] Starting resume analysis flow');
+    
     this.isProcessing = true;
     this.analyzeButton.disabled = true;
     this.analyzeButton.style.opacity = '0.5';
@@ -169,43 +171,78 @@ export class Modal {
 
     try {
       let payload;
+      const startTime = Date.now();
+      
       if (this.usingSample && this.selectedSampleFile) {
+        console.log(`📄 [RESUME UPLOAD] Processing sample file: ${this.selectedSampleFile}`);
         const fs = require('fs');
         const path = require('path');
         const filePath = path.join(process.cwd(), 'sample-resumes', this.selectedSampleFile);
         const fileBuffer = fs.readFileSync(filePath);
         const file = new File([fileBuffer], this.selectedSampleFile, { type: 'application/pdf' });
+        console.log(`📊 [RESUME UPLOAD] Sample file size: ${fileBuffer.length} bytes`);
         payload = await processResumeFile(file);
       } else {
+        console.log(`📄 [RESUME UPLOAD] Processing uploaded file: ${this.file?.name || 'unknown'}`);
+        console.log(`📊 [RESUME UPLOAD] File details:`, {
+          name: this.file?.name,
+          size: this.file?.size,
+          type: this.file?.type,
+          lastModified: this.file?.lastModified ? new Date(this.file.lastModified).toISOString() : 'unknown'
+        });
         payload = await processResumeFile(this.file);
       }
 
+      const processingTime = Date.now() - startTime;
+      console.log(`⚡ [RESUME UPLOAD] File processing completed in ${processingTime}ms`);
+      console.log(`📋 [RESUME UPLOAD] Payload details:`, {
+        fileName: payload.fileName,
+        mimeType: payload.mimeType,
+        textLength: payload.text?.length || 0,
+        hasBase64: !!payload.base64,
+        base64Length: payload.base64?.length || 0
+      });
+
+      console.log('🤖 [RESUME UPLOAD] Sending to LLM for analysis...');
+      const analysisStartTime = Date.now();
       const stats = await requestResumeStats(payload);
+      const analysisTime = Date.now() - analysisStartTime;
+      
+      console.log(`🎯 [RESUME UPLOAD] LLM analysis completed in ${analysisTime}ms`);
+      console.log('📈 [RESUME UPLOAD] Generated stats:', stats);
 
       if (stats.summary.startsWith("❌") || stats.summary.startsWith("⚠️")) {
+        console.warn('⚠️ [RESUME UPLOAD] Analysis completed with issues:', stats.summary);
         this.setStatus('Analysis completed with issues', S.warning);
         return;
       }
 
       if (!this.gameGrid) {
+        console.error('❌ [RESUME UPLOAD] Game grid not available');
         this.setStatus('Game not available', S.warning);
         return;
       }
 
+      console.log('👤 [RESUME UPLOAD] Creating student from resume stats...');
       if (this.createStudentFromResume(stats)) {
+        const totalTime = Date.now() - startTime;
+        console.log(`✅ [RESUME UPLOAD] Student created successfully! Total time: ${totalTime}ms`);
         if (this.gameGrid.sidebar) this.gameGrid.sidebar.refresh();
         this.close();
       } else {
+        console.warn('⚠️ [RESUME UPLOAD] Failed to create student - no available positions');
         this.setStatus('No available positions in arena', S.warning);
       }
     } catch (error) {
-      console.error("Resume analysis failed", error);
+      console.error("❌ [RESUME UPLOAD] Analysis failed:", error);
+      console.error("❌ [RESUME UPLOAD] Error stack:", error.stack);
       this.setStatus('Analysis failed. Check console for details.', S.warning);
     } finally {
       this.isProcessing = false;
       this.analyzeButton.disabled = false;
       this.analyzeButton.style.opacity = '1';
       this.analyzeButton.textContent = 'Upload';
+      console.log('🏁 [RESUME UPLOAD] Upload flow completed');
     }
   }
 

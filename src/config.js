@@ -40,7 +40,7 @@ export const gameSpeedConfig = {
     { label: "45x", multiplier: 45, delay: 22 },
     { label: "50x", multiplier: 50, delay: 20 }
   ],
-  defaultSpeedIndex: 3 // 1x speed
+  defaultSpeedIndex: 6
 };
 
 let currentSpeedIndex = gameSpeedConfig.defaultSpeedIndex;
