@@ -55,29 +55,39 @@ export class ConversationService {
         if (turnCount === maxTurns - 1) {
           // Generate final message and force ending
           message = await this.generateMessage(currentSpeaker, currentListener, context, isFirstMessage, messages);
-          cleanMessage = message.replace(/\s*\[end\]/gi, '').trim();
-          
+          cleanMessage = message.replace(/\s*\[end\]/gi, '').replace(/\s*\[offer\]/gi, '').trim();
+
           // Generate a brief farewell and force [end]
           const farewells = ["nice meeting you", "see ya", "gotta go", "catch you later", "take care"];
           const farewell = farewells[Math.floor(Math.random() * farewells.length)];
-          
+
           // Use the generated message if it's short, otherwise use farewell
           if (cleanMessage.length <= 15) {
             cleanMessage = `${cleanMessage} [end]`;
           } else {
             cleanMessage = `${farewell} [end]`;
           }
-          
+
           messageEndsConversation = true;
           console.log(`[FORCED END] ${currentSpeaker.isStudent ? 'Student' : 'Recruiter'} ${currentSpeaker.id}: "${cleanMessage.replace(' [end]', '')}"`);
         } else {
           // Normal message generation
           message = await this.generateMessage(currentSpeaker, currentListener, context, isFirstMessage, messages);
-          
+
           // Check if conversation should end (case-insensitive)
           messageEndsConversation = message.toLowerCase().includes('[end]');
-          cleanMessage = message.replace(/\s*\[end\]/gi, '').trim();
-          
+
+          // Check for job offer (case-insensitive)
+          const isJobOffer = message.toLowerCase().includes('[offer]');
+          if (isJobOffer && !currentSpeaker.isStudent && currentListener.isStudent) {
+            // Recruiter is making a job offer to student
+            currentListener.stats.jobOffers = (currentListener.stats.jobOffers || 0) + 1;
+            console.log(`🎉 JOB OFFER! ${currentSpeaker.stats.name} offered ${currentListener.stats.name} a job!`);
+          }
+
+          // Clean message by removing both [end] and [offer] tags
+          cleanMessage = message.replace(/\s*\[end\]/gi, '').replace(/\s*\[offer\]/gi, '').trim();
+
           // For student-student conversations, check if message is just a single emoji
           if (currentSpeaker.isStudent && currentListener.isStudent && this.isSingleEmoji(cleanMessage)) {
             messageEndsConversation = true;
@@ -89,7 +99,7 @@ export class ConversationService {
 
         // Show message in chat bubble with longer duration
         const bubbleDuration = 3000; // 3 seconds to read the message
-        const displayMessage = cleanMessage.replace(' [end]', '');
+        const displayMessage = cleanMessage.replace(' [end]', '').replace(' [offer]', '');
         chatBubble.showBubble(currentSpeaker.id, displayMessage, bubbleDuration, currentSpeaker.isStudent);
 
         // Store the message
@@ -193,7 +203,7 @@ export class ConversationService {
           messages: [
             {
               role: "System",
-              content: "You are simulating a conversation at a networking event. MAXIMUM 5 WORDS per response. Never use quotes around text. Use super short, casual spoken language. Keep words short and simple. Don't mention your ID number or compare yourself to others. Do not repeat what has already been said. After 2-4 exchanges, when conversation feels complete, add ' [END]' to your response. Do not end immediately after being asked a question. IMPORTANT: Type in all lowercase and avoid punctuation. You may also choose to respond using an emoji and no other text."
+              content: "You are simulating a conversation at a networking event. MAXIMUM 5 WORDS per response. Never use quotes around text. Use super short, casual spoken language. Keep words short and simple. Don't mention your ID number or compare yourself to others. Do not repeat what has already been said. After 2-4 exchanges, when conversation feels complete, add ' [END]' to your response. Do not end immediately after being asked a question. IMPORTANT: Type in all lowercase and avoid punctuation. You may also choose to respond using an emoji and no other text. For recruiters: If offering a job to a student, end your message with ' [offer]' (this should be very rare)."
             },
             {
               role: "User",
@@ -389,7 +399,11 @@ TALKING TO: ${recruiter.stats.name} from ${recruiter.stats.company}
 - Hiring: ${recruiter.stats.lookingFor.role}
 - Needs: ${recruiter.stats.requirements.slice(0, 2).join(', ')} (${recruiter.stats.experienceRequired}+ years)
 
-GOAL: Get the job. Show your skills match their needs. If they're rude about your qualifications, get defensive.`;
+GOAL: Get the job. Show your skills match their needs. If they're rude about your qualifications, get defensive.
+
+CONVERSATION FLOW:
+- If conversation is going well, you or recruiter may suggest exchanging LinkedIn, resume, or email
+- If conversation is going VERY well (rare), recruiter may offer you a job`;
 
     } else {
       prompt += `
@@ -402,7 +416,13 @@ TALKING TO: ${student.stats.name}
 - Skills: ${student.stats.skills.slice(0, 3).join(', ')}
 - GPA: ${student.stats.gpa}
 
-GOAL: Assess if they're qualified. If they lack experience/skills, become dismissive or frustrated.`;
+GOAL: Assess if they're qualified. 
+IMPORTANT: After **1-2** total messages in the conversation, decide whether or not they are qualified. 
+They do not need to meet all qualifications but should show potential.
+If they lack experience/skills, become dismissive or frustrated, and end the conversation quickly.
+If they are a good fit, you may suggest exchanging LinkedIn, resume, or email.
+If conversation is going very well, offer them a job by ending your message with ' [offer]'
+`;
     }
 
     if (isStarter) {

@@ -157,9 +157,9 @@ export function initGameGrid(size = 10) {
   console.log('Recruiter 3 looking for:', recruiter3.stats.lookingFor);
 
   // Add students
-  gameGrid.addAgent(2, 2, null, true); // Student (will get ID 4)
-  gameGrid.addAgent(5, 5, null, true); // Student (will get ID 5)
-  gameGrid.addAgent(9, 3, null, true); // Student (will get ID 6)
+  // gameGrid.addAgent(2, 2, null, true); // Student (will get ID 4)
+  // gameGrid.addAgent(5, 5, null, true); // Student (will get ID 5)
+  // gameGrid.addAgent(9, 3, null, true); // Student (will get ID 6)
 
   // Initialize the renderer (this creates the DOM elements)
   gameGrid.render();
