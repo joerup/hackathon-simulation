@@ -44,31 +44,57 @@ export class ConversationService {
       let isFirstMessage = true;
       let conversationEnded = false;
       let turnCount = 0;
-      const maxTurns = 100; // Safety limit: 50 exchanges max
+      const maxTurns = 10; // Strict limit: 10 exchanges max
 
       while (!conversationEnded && turnCount < maxTurns) {
-        // Generate message
-        const message = await this.generateMessage(currentSpeaker, currentListener, context, isFirstMessage, messages);
+        let message;
+        let messageEndsConversation = false;
+        let cleanMessage;
 
-        // Check if conversation should end (case-insensitive)
-        const messageEndsConversation = message.toLowerCase().includes('[end]');
-        const cleanMessage = message.replace(/\s*\[end\]/gi, '').trim();
-
-        console.log(`${currentSpeaker.isStudent ? 'Student' : 'Recruiter'} ${currentSpeaker.id}: "${cleanMessage}"`);
+        // Check if we're at the final turn
+        if (turnCount === maxTurns - 1) {
+          // Generate final message and force ending
+          message = await this.generateMessage(currentSpeaker, currentListener, context, isFirstMessage, messages);
+          cleanMessage = message.replace(/\s*\[end\]/gi, '').trim();
+          
+          // Generate a brief farewell and force [end]
+          const farewells = ["nice meeting you", "see ya", "gotta go", "catch you later", "take care"];
+          const farewell = farewells[Math.floor(Math.random() * farewells.length)];
+          
+          // Use the generated message if it's short, otherwise use farewell
+          if (cleanMessage.length <= 15) {
+            cleanMessage = `${cleanMessage} [end]`;
+          } else {
+            cleanMessage = `${farewell} [end]`;
+          }
+          
+          messageEndsConversation = true;
+          console.log(`[FORCED END] ${currentSpeaker.isStudent ? 'Student' : 'Recruiter'} ${currentSpeaker.id}: "${cleanMessage.replace(' [end]', '')}"`);
+        } else {
+          // Normal message generation
+          message = await this.generateMessage(currentSpeaker, currentListener, context, isFirstMessage, messages);
+          
+          // Check if conversation should end (case-insensitive)
+          messageEndsConversation = message.toLowerCase().includes('[end]');
+          cleanMessage = message.replace(/\s*\[end\]/gi, '').trim();
+          
+          console.log(`${currentSpeaker.isStudent ? 'Student' : 'Recruiter'} ${currentSpeaker.id}: "${cleanMessage}"`);
+        }
 
         // Show message in chat bubble with longer duration
         const bubbleDuration = 3000; // 3 seconds to read the message
-        chatBubble.showBubble(currentSpeaker.id, cleanMessage, bubbleDuration, currentSpeaker.isStudent);
+        const displayMessage = cleanMessage.replace(' [end]', '');
+        chatBubble.showBubble(currentSpeaker.id, displayMessage, bubbleDuration, currentSpeaker.isStudent);
 
         // Store the message
         messages.push({
           speaker: currentSpeaker,
-          message: cleanMessage,
+          message: displayMessage,
           timestamp: Date.now()
         });
 
         // Check for end conditions
-        if (messageEndsConversation || turnCount >= maxTurns - 1) {
+        if (messageEndsConversation) {
           conversationEnded = true;
         } else {
           // Switch speakers for next turn
