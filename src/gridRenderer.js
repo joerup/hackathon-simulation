@@ -75,9 +75,12 @@ export class GridRenderer {
     const viewportWidth = window.innerWidth;
     const viewportHeight = window.innerHeight;
 
-    // Account for padding and margins (reserve some space)
-    const availableWidth = viewportWidth * 0.9;
-    const availableHeight = viewportHeight * 0.9;
+    // Account for header (60px), padding (4rem = 64px), speed control (~120px), and margins
+    const reservedWidth = Math.max(120, viewportWidth * 0.1); // At least 120px margin
+    const reservedHeight = 60 + 64 + 120 + 40; // Header + padding + speed control + margin
+
+    const availableWidth = viewportWidth - reservedWidth;
+    const availableHeight = viewportHeight - reservedHeight;
 
     // Calculate max cell size that fits in both dimensions
     const maxCellWidth = Math.floor(availableWidth / this.gameState.size);
@@ -86,8 +89,11 @@ export class GridRenderer {
     // Use the smaller dimension to ensure grid fits on screen
     const cellSize = Math.min(maxCellWidth, maxCellHeight);
 
-    // Set minimum and maximum bounds
-    return Math.max(15, Math.min(cellSize, 60));
+    // Set minimum and maximum bounds with smaller minimum for mobile
+    const minSize = viewportWidth < 680 ? 12 : 15;
+    const maxSize = viewportWidth < 680 ? 40 : 60;
+    
+    return Math.max(minSize, Math.min(cellSize, maxSize));
   }
 
   /**
