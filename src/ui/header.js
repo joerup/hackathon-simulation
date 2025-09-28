@@ -1,4 +1,5 @@
 import { showModal } from './modal.js';
+import { showLeaderboard } from './leaderboard.js';
 
 /**
  * Header component - Contains app title and navigation
@@ -59,13 +60,52 @@ export function createHeader(gameGrid = null) {
   titleContainer.appendChild(logo);
   titleContainer.appendChild(title);
 
+  // Create button container
+  const buttonContainer = document.createElement('div');
+  buttonContainer.style.cssText = `
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+  `;
+
+  // Create Leaderboard button
+  const leaderboardButton = document.createElement('button');
+  leaderboardButton.textContent = 'Leaderboard';
+  leaderboardButton.style.cssText = `
+    background: rgba(212, 165, 116, 0.2);
+    color: #3d2f1f;
+    border: 2px solid rgba(139, 113, 85, 0.3);
+    border-radius: 8px;
+    padding: 0.6rem 1.2rem;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin: 0;
+    min-width: 110px;
+  `;
+
+  leaderboardButton.addEventListener('mouseenter', () => {
+    leaderboardButton.style.transform = 'translateY(-1px)';
+    leaderboardButton.style.background = 'rgba(212, 165, 116, 0.3)';
+  });
+
+  leaderboardButton.addEventListener('mouseleave', () => {
+    leaderboardButton.style.transform = 'translateY(0)';
+    leaderboardButton.style.background = 'rgba(212, 165, 116, 0.2)';
+  });
+
+  leaderboardButton.addEventListener('click', () => {
+    showLeaderboard(gameGrid);
+  });
+
   // Create Add Student button
   const addStudentButton = document.createElement('button');
   addStudentButton.textContent = 'Add Student';
   addStudentButton.style.cssText = `
     background: linear-gradient(140deg, #d4a574, #c1955f);
     color: #3d2f1f;
-    border: none;
+    border: 2px solid transparent;
     border-radius: 8px;
     padding: 0.6rem 1.2rem;
     font-weight: 600;
@@ -73,6 +113,7 @@ export function createHeader(gameGrid = null) {
     cursor: pointer;
     transition: transform 0.2s ease;
     margin: 0;
+    min-width: 110px;
   `;
 
   addStudentButton.addEventListener('mouseenter', () => {
@@ -87,9 +128,13 @@ export function createHeader(gameGrid = null) {
     showModal(gameGrid);
   });
 
+  // Add buttons to container
+  buttonContainer.appendChild(leaderboardButton);
+  buttonContainer.appendChild(addStudentButton);
+
   // Assemble header
   header.appendChild(titleContainer);
-  header.appendChild(addStudentButton);
+  header.appendChild(buttonContainer);
 
   return header;
 }
