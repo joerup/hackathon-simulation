@@ -96,7 +96,7 @@ export class ConversationState {
         agent.inConversation = false;
         agent.conversationPartner = null;
         agent.conversationId = null;
-        agent.lastConvoCooldown = 5; // Set cooldown to 5 timesteps
+        agent.lastConvoCooldown = 15;
       }
       this.agentConversations.delete(agentId);
     });

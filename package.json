@@ -7,6 +7,12 @@
   "main": "main.js",
   "scripts": {
     "start": "electron .",
+    "build:mac": "npx @electron/packager . LinkedOut --platform=darwin --arch=arm64 --out=dist --overwrite --extra-resource=sample-resumes",
+    "build:mac-intel": "npx @electron/packager . LinkedOut --platform=darwin --arch=x64 --out=dist --overwrite --extra-resource=sample-resumes",
+    "build:win": "npx @electron/packager . LinkedOut --platform=win32 --arch=arm64 --out=dist --overwrite --extra-resource=sample-resumes",
+    "build:win-intel": "npx @electron/packager . LinkedOut --platform=win32 --arch=x64 --out=dist --overwrite --extra-resource=sample-resumes",
+    "build:linux": "npx @electron/packager . LinkedOut --platform=linux --arch=x64 --out=dist --overwrite --extra-resource=sample-resumes",
+    "build:all": "npm run build:mac && npm run build:mac-intel && npm run build:win && npm run build:win-intel && npm run build:linux",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",

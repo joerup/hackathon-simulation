@@ -208,10 +208,10 @@ export class LeaderboardSidebar {
         calculatedInteractionCount: interactionCount
       };
     }).sort((a, b) => {
-      // Primary: Job Offers
-      const aJobs = a.stats?.jobOffers || a.jobOffers || 0;
-      const bJobs = b.stats?.jobOffers || b.jobOffers || 0;
-      if (aJobs !== bJobs) return bJobs - aJobs;
+      // Primary: Connections
+      const aConnections = a.stats?.connections || a.connections || 0;
+      const bConnections = b.stats?.connections || b.connections || 0;
+      if (aConnections !== bConnections) return bConnections - aConnections;
       
       // Secondary: Total Interaction Score
       if (a.calculatedTotalScore !== b.calculatedTotalScore) {
@@ -296,8 +296,9 @@ export class LeaderboardSidebar {
 
     const totals = {
       'Students': students.length,
-      'Job Offers': students.reduce((s, st) => s + (st.stats?.jobOffers || st.jobOffers || 0), 0),
-      'Recruiters Met': students.reduce((s, st) => s + (st.recruitersSpokenTo || 0), 0)
+      'Connections': students.reduce((s, st) => s + (st.stats?.connections || st.connections || 0), 0),
+      'Recruiters Met': students.reduce((s, st) => s + (st.recruitersSpokenTo || 0), 0),
+      'Total Scores': students.reduce((s, st) => s + (st.calculatedTotalScore || 0), 0).toFixed(0)
     };
 
     Object.entries(totals).forEach(([label, value]) => {
@@ -350,7 +351,7 @@ export class LeaderboardSidebar {
         align-items: center;
       `);
 
-      const headerItems = ['#', 'Name', 'Offers', 'Recruiters', 'Distance'];
+      const headerItems = ['#', 'Name', 'Connections', 'Recruiters', 'Scores', 'Distance'];
       headerItems.forEach((text, i) => {
         const item = this.createElement('div', i > 1 ? 'text-align: center;' : '', text);
         header.appendChild(item);
@@ -386,9 +387,10 @@ export class LeaderboardSidebar {
         });
 
         // Get data
-      const jobOffers = student.stats?.jobOffers || student.jobOffers || 0;
-      const recruitersMet = student.recruitersSpokenTo || 0;
-      const distance = Math.round(student.distanceTraveled || 0);
+        const connections = student.stats?.connections || student.connections || 0;
+        const recruitersMet = student.recruitersSpokenTo || 0;
+        const totalScores = student.calculatedTotalScore ? student.calculatedTotalScore.toFixed(0) : '0';
+        const distance = Math.round(student.distanceTraveled || 0);
 
         // Rank
         const rankEl = this.createElement('div', `
@@ -406,16 +408,16 @@ export class LeaderboardSidebar {
           min-width: 0;
         `, this.getStudentDisplayName(student));
 
-        // Job Offers
-        const offersEl = this.createElement('div', `
+        // Connections
+        const connectionsEl = this.createElement('div', `
           text-align: center;
           font-weight: 700;
           color: ${S.secondary};
-          background: ${i === 0 && jobOffers > 0 ? S.highlight : 'transparent'};
+          background: ${i === 0 && connections > 0 ? S.highlight : 'transparent'};
           padding: 0.2rem 0.3rem;
           border-radius: 4px;
           min-width: 30px;
-        `, jobOffers.toString());
+        `, connections.toString());
 
         // Recruiters Met
         const recruitersEl = this.createElement('div', `
@@ -435,7 +437,7 @@ export class LeaderboardSidebar {
 
         row.appendChild(rankEl);
         row.appendChild(nameEl);
-        row.appendChild(offersEl);
+        row.appendChild(connectionsEl);
         row.appendChild(recruitersEl);
         row.appendChild(distEl);
 
