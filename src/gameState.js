@@ -2,6 +2,19 @@ import { ConversationState } from './conversationState.js';
 import { generateAgentStats } from './generators/agentStats.js';
 import { generateAgentAppearance } from './generators/agentAppearance.js';
 import { createObstacle, DEFAULT_OBSTACLE_POSITIONS } from './generators/obstacles.js';
+import {
+  isValidPosition as isPositionWithinBounds,
+  getAdjacentPositions as getAdjacentPositionsForGrid,
+  findAgentAt as findAgentInGrid
+} from './utils/gridUtils.js';
+import {
+  moveAgent as moveAgentHelper,
+  moveAgentRandomly as moveAgentRandomlyHelper
+} from './logic/agentMovement.js';
+import {
+  checkForConversations as checkForConversationsHelper,
+  handleConversations as handleConversationsHelper
+} from './logic/conversationManager.js';
 
 /**
  * GameState class - Manages the internal state of the game grid
@@ -106,22 +119,14 @@ export class GameState {
    * Check if position is valid within grid bounds
    */
   isValidPosition(x, y) {
-    return x >= 0 && x < this.size && y >= 0 && y < this.size;
+    return isPositionWithinBounds(this.size, x, y);
   }
 
   /**
    * Get all 4 cardinal adjacent positions around a given position (up, down, left, right)
    */
   getAdjacentPositions(x, y) {
-    const positions = [
-      { x: x, y: y - 1 }, // up
-      { x: x, y: y + 1 }, // down
-      { x: x - 1, y: y }, // left
-      { x: x + 1, y: y }  // right
-    ];
-    
-    // Filter to only valid positions
-    return positions.filter(pos => this.isValidPosition(pos.x, pos.y));
+    return getAdjacentPositionsForGrid(this.size, x, y);
   }
 
   /**
@@ -139,105 +144,35 @@ export class GameState {
    * Move an agent to a new position
    */
   moveAgent(agent, newX, newY) {
-    if (this.conversationState.isAgentInConversation(agent.id)) return false;
-    if (!this.isValidPosition(newX, newY)) return false;
-    if (this.grid[newY][newX].type !== 'walkable') return false;
-
-    const oldX = agent.x;
-    const oldY = agent.y;
-
-    // Clear old position
-    this.grid[oldY][oldX] = {
-      type: 'walkable',
-      agent: null,
-      obstacle: null
-    };
-
-    // Set new position
-    this.grid[newY][newX] = {
-      type: 'agent',
-      agent,
-      obstacle: null
-    };
-
-    // Update agent position
-    agent.position = [newX, newY];
-
-    return true;
+    return moveAgentHelper(this, agent, newX, newY);
   }
 
   /**
    * Move agent to a random adjacent walkable position
    */
   moveAgentRandomly(agent) {
-    if (this.conversationState.isAgentInConversation(agent.id)) return false;
-
-    const adjacentPositions = this.getAdjacentPositions(agent.x, agent.y);
-    const walkablePositions = adjacentPositions.filter(pos => 
-      this.grid[pos.y][pos.x].type === 'walkable'
-    );
-
-    if (walkablePositions.length === 0) return false;
-
-    const randomPosition = walkablePositions[Math.floor(Math.random() * walkablePositions.length)];
-    return this.moveAgent(agent, randomPosition.x, randomPosition.y);
+    return moveAgentRandomlyHelper(this, agent);
   }
 
   /**
    * Find an agent at a specific position
    */
   findAgentAt(x, y) {
-    if (!this.isValidPosition(x, y)) return null;
-    const cell = this.grid[y][x];
-    return cell.type === 'agent' ? cell.agent : null;
+    return findAgentInGrid(this.grid, this.size, x, y);
   }
 
   /**
    * Check for new conversations between agents using linear time complexity
    */
   checkForConversations() {
-    // Single linear scan through all agents
-    for (let agent of this.agents) {
-      // Skip agents already in conversation or on cooldown
-      if (this.conversationState.isAgentInConversation(agent.id) || agent.lastConvoCooldown > 0) continue;
-
-      // Check 4 cardinal neighbors for available agents
-      const neighbors = this.getAdjacentPositions(agent.x, agent.y);
-      for (let neighbor of neighbors) {
-        const otherAgent = this.findAgentAt(neighbor.x, neighbor.y);
-        
-        // If we found an agent at this neighbor position who isn't in conversation and not on cooldown
-        if (otherAgent && 
-            !this.conversationState.isAgentInConversation(otherAgent.id) && 
-            otherAgent.lastConvoCooldown === 0) {
-          // Create conversation between these two agents
-          this.conversationState.createConversation(agent, otherAgent);
-
-          // Mark agents as obstacles while in conversation
-          this.grid[agent.y][agent.x].type = 'agent';
-          this.grid[otherAgent.y][otherAgent.x].type = 'agent';
-          
-          // This agent is now paired, move to next agent
-          break;
-        }
-      }
-    }
+    checkForConversationsHelper(this);
   }
 
   /**
    * Handle existing conversations using the global conversation state
    */
   handleConversations() {
-    // Process all conversations (check for ending, update duration, etc.)
-    this.conversationState.processConversations();
-    
-    // Synchronize agent states with conversation state
-    this.conversationState.synchronizeAgentStates();
-    
-    // Clean up old conversations periodically
-    if (this.frameCount % 60 === 0) { // Every 60 frames
-      this.conversationState.cleanup();
-    }
+    handleConversationsHelper(this);
   }
 
   /**
