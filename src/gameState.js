@@ -286,9 +286,17 @@ export class GameState {
     // Handle existing conversations
     this.handleConversations();
 
-    // Move all agents
+    // Move agents with probability based on ENERGY stat
     this.agents.forEach(agent => {
-      this.moveAgentRandomly(agent);
+      // Calculate movement probability based on ENERGY score
+      // energyScore ranges from 45-95, scale to lower probabilities (0.225-0.475)
+      const energyScore = agent.stats.energyScore || 45; // fallback to minimum
+      const movementProbability = energyScore / 200; // Lower probabilities
+
+      // Only move if random number is less than movement probability
+      if (Math.random() < movementProbability) {
+        this.moveAgentRandomly(agent);
+      }
     });
   }
 
