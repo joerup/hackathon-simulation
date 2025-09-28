@@ -28,15 +28,6 @@ export class GameState {
     this.frameCount = 0;
     this.nextAgentId = 1; // Start agent IDs from 1
     this.conversationState = new ConversationState(this.agents);
-    this.chatSidebar = null; // Reference to chat sidebar
-  }
-
-  /**
-   * Set the chat sidebar reference
-   */
-  setChatSidebar(chatSidebar) {
-    this.chatSidebar = chatSidebar;
-    this.conversationState.setChatSidebar(chatSidebar);
   }
 
   /**
@@ -272,6 +263,15 @@ export class GameState {
    */
   processFrame() {
     this.frameCount++;
+    
+    // Debug: log movement statistics every 5 seconds (300 frames)
+    if (this.frameCount % 300 === 0) {
+      const studentDistances = this.agents
+        .filter(agent => agent.isStudent)
+        .map(agent => `${agent.stats?.name || `Student ${agent.id}`}: ${agent.distanceTraveled || 0}`)
+        .join(', ');
+      console.log(`Frame ${this.frameCount} - Student distances: ${studentDistances}`);
+    }
 
     // Decrement cooldown timers for all agents
     this.agents.forEach(agent => {
@@ -290,7 +290,7 @@ export class GameState {
     this.agents.forEach(agent => {
       // Calculate movement probability based on ENERGY score
       // energyScore ranges from 45-95, scale to lower probabilities (0.225-0.475)
-      const energyScore = agent.stats.energyScore || 45; // fallback to minimum
+      const energyScore = agent.stats?.energyScore ?? 45; // fallback to minimum
       const movementProbability = energyScore / 200; // Lower probabilities
 
       // Only move if random number is less than movement probability

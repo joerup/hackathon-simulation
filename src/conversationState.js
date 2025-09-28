@@ -1,4 +1,9 @@
 import { ConversationService } from './services/conversationService.js';
+import { 
+  calculateInteractionScore, 
+  createInteractionRecord, 
+  determineJobOffer 
+} from './logic/interactionScoring.js';
 
 /**
  * ConversationState class - Manages all conversations globally
@@ -11,15 +16,6 @@ export class ConversationState {
     this.agentConversations = new Map(); // Map<agentId, conversationId>
     this.agents = agents; // Reference to agents array for state updates
     this.conversationService = new ConversationService();
-    this.chatSidebar = null; // Reference to chat sidebar
-  }
-
-  /**
-   * Set the chat sidebar reference
-   */
-  setChatSidebar(chatSidebar) {
-    this.chatSidebar = chatSidebar;
-    this.conversationService.setChatSidebar(chatSidebar);
   }
 
   /**
@@ -96,6 +92,16 @@ export class ConversationState {
     conversation.endTime = Date.now();
     conversation.duration = conversation.endTime - conversation.startTime;
 
+    // Get the agents involved
+    const [agent1Id, agent2Id] = conversation.participants;
+    const agent1 = this.agents.find(a => a.id === agent1Id);
+    const agent2 = this.agents.find(a => a.id === agent2Id);
+
+    // Calculate interaction scores for student-recruiter interactions
+    if (agent1 && agent2) {
+      this.processInteractionScoring(agent1, agent2, conversation);
+    }
+
     // Update agent states - reset conversation properties and set cooldown
     conversation.participants.forEach(agentId => {
       const agent = this.agents.find(a => a.id === agentId);
@@ -122,6 +128,87 @@ export class ConversationState {
 
     // Remove from active conversations
     this.conversations.delete(conversationId);
+  }
+
+  /**
+   * Process interaction scoring for student-recruiter interactions
+   * @param {Object} agent1 - First agent
+   * @param {Object} agent2 - Second agent
+   * @param {Object} conversation - Conversation data
+   */
+  processInteractionScoring(agent1, agent2, conversation) {
+    // Only score student-recruiter interactions
+    let student, recruiter;
+    
+    if (agent1.isStudent && !agent2.isStudent) {
+      student = agent1;
+      recruiter = agent2;
+    } else if (!agent1.isStudent && agent2.isStudent) {
+      student = agent2;
+      recruiter = agent1;
+    } else {
+      // Student-student or recruiter-recruiter conversation, no scoring needed
+      return;
+    }
+
+    try {
+      // Get conversation data from the service if available
+      const conversationData = this.conversationService.getConversationData(conversation.id) || {};
+      
+      // Prepare conversation metadata
+      const convMetadata = {
+        duration: conversation.duration,
+        messageCount: conversationData.messageCount || Math.floor(conversation.duration / 2000) + 1, // Estimate if not available
+        quality: conversation.quality || 0.5
+      };
+
+      // Calculate the interaction score
+      const scoreData = calculateInteractionScore(student, recruiter, convMetadata);
+      
+      // Create interaction record
+      const interactionRecord = createInteractionRecord(
+        student, 
+        recruiter, 
+        scoreData, 
+        conversation.endTime || Date.now()
+      );
+
+      // Store the interaction in the student's history
+      if (!student.stats.interactionHistory) {
+        student.stats.interactionHistory = [];
+      }
+      student.stats.interactionHistory.push(interactionRecord);
+
+      // Update total interaction score
+      if (typeof student.stats.totalInteractionScore !== 'number') {
+        student.stats.totalInteractionScore = 0;
+      }
+      student.stats.totalInteractionScore += scoreData.totalScore;
+
+      // Check for job offer
+      const receivedOffer = determineJobOffer(scoreData, student);
+      if (receivedOffer) {
+        if (typeof student.stats.jobOffers !== 'number') {
+          student.stats.jobOffers = 0;
+        }
+        student.stats.jobOffers++;
+        
+        // Add job offer details to the interaction record
+        interactionRecord.resultedInOffer = true;
+        interactionRecord.offerCompany = recruiter.stats.company;
+        
+        console.log(`🎉 ${student.stats.name} received a job offer from ${recruiter.stats.company}! (Score: ${scoreData.totalScore})`);
+      } else {
+        interactionRecord.resultedInOffer = false;
+      }
+
+      // Log the interaction for debugging
+      console.log(`📊 Interaction scored: ${student.stats.name} ↔ ${recruiter.stats.company} | Score: ${scoreData.totalScore} | Personality: ${scoreData.studentPersonality.type.name} | Offer: ${receivedOffer ? 'Yes' : 'No'}`);
+
+    } catch (error) {
+      console.error('Error processing interaction scoring:', error);
+      // Continue gracefully without scoring
+    }
   }
 
   /**

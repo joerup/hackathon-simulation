@@ -3,17 +3,17 @@
 import { initGameGrid } from "./ui/gameGrid.js";
 import { initHeader } from "./ui/header.js";
 import { initStudentSidebar } from "./ui/studentSidebar.js";
-import { initChatSidebar } from "./ui/chatSidebar.js";
+import { initLeaderboardSidebar } from "./ui/leaderboardSidebar.js";
 
 document.addEventListener("DOMContentLoaded", () => {
   const gameGrid = initGameGrid(10);
   const gridContainer = gameGrid.getRenderer().getContainer();
   const studentSidebar = initStudentSidebar(gameGrid);
-  const chatSidebar = initChatSidebar(gameGrid);
+  const leaderboardSidebar = initLeaderboardSidebar(gameGrid);
 
   // Store sidebar references in gameGrid for updates
   gameGrid.sidebar = studentSidebar;
-  gameGrid.setChatSidebar(chatSidebar);
+  gameGrid.setLeaderboardSidebar(leaderboardSidebar);
 
   initHeader(gameGrid);
 
