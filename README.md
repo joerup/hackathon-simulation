@@ -44,12 +44,13 @@ Create a file named `.env` in the project root with:
 ```env
 SNAPDRAGON_API_KEY=your_api_key_here
 SNAPDRAGON_API_URL=https://aisuite.cirrascale.com/apis/v2/chat/completions
-SNAPDRAGON_MODEL=Llama-3.3-70B
+SNAPDRAGON_MODEL=Llama-3.1-8B
 ```
 
 Notes:
 
-- Do not commit your real API key.
+- Do not commit your real API key (`.env` is gitignored).
+- The `.env` file is automatically loaded in both development and production builds.
 - Without an API key: resume stats will fall back to placeholders; LLM conversations may be disabled.
 
 ## Run & Usage
@@ -78,23 +79,51 @@ In the app:
 
 ## Building
 
-To build the application for distribution, use Electron Packager:
+The application includes convenient npm scripts for building on different platforms. All builds automatically include the sample resume files and environment configuration.
 
-### macOS (Apple Silicon)
-
-```bash
-npx @electron/packager . LinkedOut --platform=darwin --arch=arm64 --out=dist --overwrite
-```
-
-### Windows (ARM64)
+### Quick Build Commands
 
 ```bash
-npx @electron/packager . LinkedOut --platform=win32 --arch=arm64 --out=dist --overwrite
+# Build for macOS (Apple Silicon)
+npm run build:mac
+
+# Build for macOS (Intel)
+npm run build:mac-intel
+
+# Build for Windows (ARM64)
+npm run build:win
+
+# Build for Windows (Intel)
+npm run build:win-intel
+
+# Build for Linux
+npm run build:linux
+
+# Build for all platforms
+npm run build:all
 ```
+
+### Manual Build Commands
+
+You can also use Electron Packager directly with custom options:
+
+```bash
+# macOS (Apple Silicon)
+npx @electron/packager . LinkedOut --platform=darwin --arch=arm64 --out=dist --overwrite --extra-resource=sample-resumes
+
+# Windows (ARM64)
+npx @electron/packager . LinkedOut --platform=win32 --arch=arm64 --out=dist --overwrite --extra-resource=sample-resumes
+```
+
+### Build Features
+
+- **Sample Resumes**: Automatically included via `--extra-resource=sample-resumes`
+- **Environment Variables**: `.env` file is loaded in both development and production builds
+- **Cross-Platform**: Builds work on macOS, Windows, and Linux
 
 ### Additional Build Options
 
-You can also add these optional flags for enhanced builds:
+You can extend the build commands with these optional flags:
 
 - `--icon=assets/icon` - Add a custom icon
 - `--app-bundle-id=com.linkedout.blockarena` - Set bundle identifier
@@ -106,24 +135,31 @@ You can also add these optional flags for enhanced builds:
 Example with additional options:
 
 ```bash
-npx @electron/packager . LinkedOut --platform=darwin --arch=arm64 --out=dist --overwrite --asar --prune --app-version=1.0.0
+npx @electron/packager . LinkedOut --platform=darwin --arch=arm64 --out=dist --overwrite --extra-resource=sample-resumes --asar --prune --app-version=1.0.0
 ```
 
 ---
 
 ## How It Works
 
-## Code Overview
+### Code Overview
 
-- Electron entry: `main.js` loads `.env` and opens `index.html`.
-- App bootstrap: `src/app.js` wires the header, grid, and sidebars.
-- Game state: `src/gameState.js` manages grid cells, agents, movement, and conversations; `src/conversationState.js` tracks conversation state.
-- Rendering: `src/gridRenderer.js` draws the grid and agents; responsive sizing and chat bubble placement.
-- Generators: `src/generators/agentStats.js`, `agentAppearance.js`, `obstacles.js` create agent attributes and obstacles.
-- Logic: `src/logic/agentMovement.js` and `conversationManager.js` handle movement and meeting rules.
-- Services: `src/services/snapdragonClient.js` (resume → stats), `src/services/conversationService.js` (LLM chat turns).
-- UI components: `src/ui/header.js`, `modal.js` (Add Student, upload/sample), `studentSidebar.js`, `leaderboardSidebar.js`, `chatBubble.js`, `speedControl.js`.
-- Utils: `src/utils/fileProcessor.js`, `pdfProcessor.js`, `gridUtils.js`, `random.js`, `domUtils.js`.
+- **Electron entry**: `main.js` loads `.env` file and opens `index.html`
+- **App bootstrap**: `src/app.js` wires the header, grid, and sidebars
+- **Game state**: `src/gameState.js` manages grid cells, agents, movement, and conversations; `src/conversationState.js` tracks conversation state
+- **Rendering**: `src/gridRenderer.js` draws the grid and agents with responsive sizing and chat bubble placement
+- **Generators**: `src/generators/agentStats.js`, `agentAppearance.js`, `obstacles.js` create agent attributes and obstacles
+- **Logic**: `src/logic/agentMovement.js` and `conversationManager.js` handle movement and meeting rules
+- **Services**: `src/services/snapdragonClient.js` (resume → stats), `src/services/conversationService.js` (LLM chat turns)
+- **UI components**: `src/ui/header.js`, `modal.js` (Add Student, upload/sample), `studentSidebar.js`, `leaderboardSidebar.js`, `chatBubble.js`, `speedControl.js`
+- **Utils**: `src/utils/fileProcessor.js`, `pdfProcessor.js`, `gridUtils.js`, `random.js`, `domUtils.js`
+
+### Environment & Build Features
+
+- **Environment Variables**: Automatically loaded from `.env` file in both development and production
+- **Sample Resumes**: 10 sample PDF resumes included in all builds for testing
+- **Cross-Platform**: Works on macOS, Windows, and Linux with platform-specific builds
+- **LLM Integration**: Snapdragon API integration for resume analysis and conversation generation
 
 ## License
 

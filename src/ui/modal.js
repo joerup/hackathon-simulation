@@ -177,7 +177,38 @@ export class Modal {
         console.log(`📄 [RESUME UPLOAD] Processing sample file: ${this.selectedSampleFile}`);
         const fs = require('fs');
         const path = require('path');
-        const filePath = path.join(process.cwd(), 'sample-resumes', this.selectedSampleFile);
+        
+        // Find the sample-resumes directory in both development and production builds
+        const possiblePaths = [
+          path.join(process.cwd(), 'sample-resumes'),           // Development
+          path.join(process.resourcesPath, 'sample-resumes'),   // Production (extra-resource)
+          path.join(__dirname, '..', '..', 'sample-resumes'),   // Relative to modal.js
+          path.join(__dirname, '..', '..', '..', 'sample-resumes') // Alternative relative path
+        ];
+        
+        let sampleResumesPath = null;
+        for (const possiblePath of possiblePaths) {
+          if (fs.existsSync(possiblePath)) {
+            sampleResumesPath = possiblePath;
+            console.log(`📁 [RESUME UPLOAD] Found sample-resumes directory at: ${sampleResumesPath}`);
+            break;
+          }
+        }
+        
+        if (!sampleResumesPath) {
+          console.error('❌ [RESUME UPLOAD] Could not find sample-resumes directory');
+          console.log('📁 [RESUME UPLOAD] Searched paths:', possiblePaths);
+          throw new Error('Sample resumes directory not found');
+        }
+        
+        const filePath = path.join(sampleResumesPath, this.selectedSampleFile);
+        console.log(`📄 [RESUME UPLOAD] Reading file from: ${filePath}`);
+        
+        if (!fs.existsSync(filePath)) {
+          console.error(`❌ [RESUME UPLOAD] Sample file not found: ${filePath}`);
+          throw new Error(`Sample file not found: ${this.selectedSampleFile}`);
+        }
+        
         const fileBuffer = fs.readFileSync(filePath);
         const file = new File([fileBuffer], this.selectedSampleFile, { type: 'application/pdf' });
         console.log(`📊 [RESUME UPLOAD] Sample file size: ${fileBuffer.length} bytes`);

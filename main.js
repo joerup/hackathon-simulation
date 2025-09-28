@@ -41,31 +41,56 @@ app.on("window-all-closed", () => {
 });
 
 function loadEnvFile() {
-  const envPath = join(process.cwd(), ".env");
+  // For development: .env is in the project root
+  // For production builds: .env will be in the app bundle root
+  const possiblePaths = [
+    join(process.cwd(), ".env"),              // Development and some production builds
+    join(app.getAppPath(), ".env"),           // Most production builds
+    join(app.getPath("userData"), ".env")     // Fallback for user data directory
+  ];
 
-  if (!existsSync(envPath)) {
+  let envPath = null;
+  for (const path of possiblePaths) {
+    if (existsSync(path)) {
+      envPath = path;
+      console.log(`🔧 [ENV] Found .env file at: ${path}`);
+      break;
+    }
+  }
+
+  if (!envPath) {
+    console.log("⚠️ [ENV] No .env file found in expected locations");
     return;
   }
 
-  const content = readFileSync(envPath, "utf-8");
-  const lines = content.split(/\r?\n/);
+  try {
+    const content = readFileSync(envPath, "utf-8");
+    const lines = content.split(/\r?\n/);
+    let loadedCount = 0;
 
-  lines.forEach(line => {
-    const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith("#")) {
-      return;
-    }
+    lines.forEach(line => {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith("#")) {
+        return;
+      }
 
-    const separatorIndex = trimmed.indexOf("=");
-    if (separatorIndex === -1) {
-      return;
-    }
+      const separatorIndex = trimmed.indexOf("=");
+      if (separatorIndex === -1) {
+        return;
+      }
 
-    const key = trimmed.slice(0, separatorIndex).trim();
-    const value = trimmed.slice(separatorIndex + 1).trim();
+      const key = trimmed.slice(0, separatorIndex).trim();
+      const value = trimmed.slice(separatorIndex + 1).trim();
 
-    if (key && !(key in process.env)) {
-      process.env[key] = value;
-    }
-  });
+      if (key && !(key in process.env)) {
+        process.env[key] = value;
+        loadedCount++;
+        console.log(`✅ [ENV] Loaded: ${key}`);
+      }
+    });
+
+    console.log(`🎯 [ENV] Successfully loaded ${loadedCount} environment variables`);
+  } catch (error) {
+    console.error("❌ [ENV] Error loading .env file:", error.message);
+  }
 }
