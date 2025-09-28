@@ -108,24 +108,9 @@ export function initGameGrid(size = 10) {
 
   // Initialize the renderer (this creates the DOM elements)
   gameGrid.render();
-  
-  // Set up control button event handlers
-  const renderer = gameGrid.getRenderer();
-  const controls = renderer.getControlButtons();
-  
-  if (controls.start && controls.stop) {
-    controls.start.onclick = () => {
-      gameGrid.startSimulation();
-      controls.start.disabled = true;
-      controls.stop.disabled = false;
-    };
 
-    controls.stop.onclick = () => {
-      gameGrid.stopSimulation();
-      controls.start.disabled = false;
-      controls.stop.disabled = true;
-    };
-  }
+  // Auto-start the simulation
+  gameGrid.startSimulation();
 
   return gameGrid;
 }

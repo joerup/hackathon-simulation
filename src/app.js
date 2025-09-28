@@ -1,20 +1,18 @@
-import { initCanvasBackground } from "./canvasBackground.js";
-import { initResumePanel } from "./ui/resumePanel.js";
+// import { initCanvasBackground } from "./canvasBackground.js";
+// import { initResumePanel } from "./ui/resumePanel.js";
 import { initGameGrid } from "./ui/gameGrid.js";
+import { initHeader } from "./ui/header.js";
+import { initStudentSidebar } from "./ui/studentSidebar.js";
 
 document.addEventListener("DOMContentLoaded", () => {
-  initCanvasBackground();
-
   const gameGrid = initGameGrid(10);
   const gridContainer = gameGrid.getRenderer().getContainer();
+  const sidebar = initStudentSidebar(gameGrid);
 
-  // Initialize resume panel with game grid reference
-  initResumePanel(gameGrid);
+  // Store sidebar reference in gameGrid for updates
+  gameGrid.sidebar = sidebar;
 
-  const uiOverlay = document.querySelector('.ui-overlay');
-  if (uiOverlay) {
-    uiOverlay.appendChild(gridContainer);
-  } else {
-    document.body.appendChild(gridContainer);
-  }
+  initHeader(gameGrid);
+
+  document.body.appendChild(gridContainer);
 });
