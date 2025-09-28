@@ -50,9 +50,9 @@ export class ConversationService {
         // Generate message
         const message = await this.generateMessage(currentSpeaker, currentListener, context, isFirstMessage, messages);
 
-        // Check if conversation should end
-        const messageEndsConversation = message.includes('[END]');
-        const cleanMessage = message.replace(' [END]', '').trim();
+        // Check if conversation should end (case-insensitive)
+        const messageEndsConversation = message.toLowerCase().includes('[end]');
+        const cleanMessage = message.replace(/\s*\[end\]/gi, '').trim();
 
         console.log(`${currentSpeaker.isStudent ? 'Student' : 'Recruiter'} ${currentSpeaker.id}: "${cleanMessage}"`);
 

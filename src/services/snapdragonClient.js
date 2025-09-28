@@ -2,29 +2,39 @@ import { snapdragonConfig } from "../config.js";
 import { generateDeterministicLuck } from "../utils/random.js";
 
 export async function requestResumeStats(payload) {
+  console.log(`🤖 [LLM CLIENT] Starting resume analysis with Snapdragon LLM`);
+  console.log(`📊 [LLM CLIENT] Input payload summary:`, {
+    fileName: payload.fileName,
+    mimeType: payload.mimeType,
+    textLength: payload.text?.length || 0,
+    hasBase64: !!payload.base64,
+    base64Length: payload.base64?.length || 0
+  });
+
   const { apiKey, apiUrl, model } = snapdragonConfig;
 
   if (!apiKey) {
-    console.warn("LLM API key missing. Returning placeholder stats.");
+    console.warn("⚠️ [LLM CLIENT] API key missing. Returning placeholder stats.");
     return createPlaceholderStats(payload);
   }
 
-  const response = await fetch(apiUrl, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`
-    },
-    body: JSON.stringify({
-      model,
-      messages: [
-        {
-          role: "System",
-          content: "You are a helpful assistant."
-        },
-        {
-          role: "User",
-          content: `You are given a student resume. DO NOT MAKE ANY EXTERNAL CALLS. RESPOND ONLY IN TEXT. Read the resume and respond in the following format:
+  console.log(`🔗 [LLM CLIENT] API Configuration:`, {
+    apiUrl,
+    model,
+    hasApiKey: !!apiKey,
+    apiKeyLength: apiKey?.length || 0
+  });
+
+  const requestPayload = {
+    model,
+    messages: [
+      {
+        role: "System",
+        content: "You are a helpful assistant."
+      },
+      {
+        role: "User",
+        content: `You are given a student resume. DO NOT MAKE ANY EXTERNAL CALLS. RESPOND ONLY IN TEXT. Read the resume and respond in the following format:
 resume_data: {
 name (string)
 summary (string)
@@ -40,45 +50,114 @@ buzzwords (array of strings)
 skills (array of objects with label (string) and score (integer 0-100))
 }
 Do not make any tool calls. Resume data follows: ${payload.text}`
-        }
-      ],
-      stream: false
-    })
+      }
+    ],
+    stream: false
+  };
+
+  console.log(`📤 [LLM CLIENT] Sending request to LLM API...`);
+  console.log(`📝 [LLM CLIENT] Prompt length: ${requestPayload.messages[1].content.length} characters`);
+  
+  const requestStartTime = Date.now();
+
+  const response = await fetch(apiUrl, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`
+    },
+    body: JSON.stringify(requestPayload)
   });
+
+  const requestTime = Date.now() - requestStartTime;
+  console.log(`⚡ [LLM CLIENT] API request completed in ${requestTime}ms`);
+  console.log(`📡 [LLM CLIENT] Response status: ${response.status} ${response.statusText}`);
 
   if (!response.ok) {
     const errorDetail = await safeReadError(response);
+    console.error(`❌ [LLM CLIENT] API request failed:`, {
+      status: response.status,
+      statusText: response.statusText,
+      errorDetail,
+      apiUrl,
+      model
+    });
     throw new Error(`LLM API request failed (${response.status}): ${errorDetail}`);
   }
 
+  console.log(`📥 [LLM CLIENT] Reading response data...`);
   const data = await response.json();
   const message = data?.choices?.[0]?.message;
   const rawContent = typeof message?.content === "string" ? message.content.trim() : "";
-  const statsObject = parseResumeData(rawContent);
+  
+  console.log(`📋 [LLM CLIENT] Raw LLM response:`, {
+    hasData: !!data,
+    hasChoices: !!data?.choices,
+    choicesLength: data?.choices?.length || 0,
+    hasMessage: !!message,
+    contentLength: rawContent.length,
+    contentPreview: rawContent.substring(0, 300) + (rawContent.length > 300 ? '...' : '')
+  });
 
-  return normalizeStats(statsObject, payload);
+  console.log(`🔍 [LLM CLIENT] Parsing LLM response...`);
+  const parseStartTime = Date.now();
+  const statsObject = parseResumeData(rawContent);
+  const parseTime = Date.now() - parseStartTime;
+  
+  console.log(`✅ [LLM CLIENT] Response parsed successfully in ${parseTime}ms`);
+  console.log(`📊 [LLM CLIENT] Parsed stats object:`, statsObject);
+
+  console.log(`🔧 [LLM CLIENT] Normalizing stats...`);
+  const normalizeStartTime = Date.now();
+  const normalizedStats = normalizeStats(statsObject, payload);
+  const normalizeTime = Date.now() - normalizeStartTime;
+  
+  const totalTime = Date.now() - requestStartTime;
+  console.log(`🎯 [LLM CLIENT] Stats normalization completed in ${normalizeTime}ms`);
+  console.log(`✅ [LLM CLIENT] Resume analysis completed successfully in ${totalTime}ms`);
+  console.log(`📈 [LLM CLIENT] Final normalized stats:`, normalizedStats);
+
+  return normalizedStats;
 }
 
 function parseResumeData(rawContent) {
+  console.log(`🔍 [PARSER] Starting to parse LLM response`);
+  console.log(`📝 [PARSER] Raw content length: ${rawContent?.length || 0} characters`);
+  
   if (!rawContent) {
+    console.error(`❌ [PARSER] LLM response was empty`);
     throw new Error("LLM response was empty.");
   }
 
+  console.log(`🔎 [PARSER] Looking for 'resume_data:' pattern in response`);
   const match = rawContent.match(/resume_data\s*:\s*({[\s\S]*})/i);
   let candidate = match ? match[1] : rawContent;
   candidate = candidate.trim();
+  
+  console.log(`📋 [PARSER] Extracted candidate JSON:`, {
+    foundResumeDataPattern: !!match,
+    candidateLength: candidate.length,
+    candidatePreview: candidate.substring(0, 200) + (candidate.length > 200 ? '...' : '')
+  });
 
   if (!candidate.startsWith('{')) {
+    console.log(`🔧 [PARSER] Adding missing opening brace`);
     candidate = `{${candidate}`;
   }
   if (!candidate.endsWith('}')) {
+    console.log(`🔧 [PARSER] Adding missing closing brace`);
     candidate = `${candidate}}`;
   }
 
   let parsed;
   try {
+    console.log(`🎯 [PARSER] Attempting direct JSON parse...`);
     parsed = JSON.parse(candidate);
+    console.log(`✅ [PARSER] Direct JSON parse successful`);
   } catch (error) {
+    console.warn(`⚠️ [PARSER] Direct JSON parse failed: ${error.message}`);
+    console.log(`🔧 [PARSER] Attempting to fix common LLM formatting issues...`);
+    
     // Try to fix common formatting issues in LLM response
     let withQuotedKeys = candidate
       // Quote unquoted object keys
@@ -98,29 +177,41 @@ function parseResumeData(rawContent) {
       .replace(/"\s*:\s*/g, '": ')
       .replace(/,\s*/g, ', ');
 
+    console.log(`🔧 [PARSER] Applied formatting fixes, attempting second JSON parse...`);
     try {
       parsed = JSON.parse(withQuotedKeys);
+      console.log(`✅ [PARSER] Second JSON parse successful after formatting fixes`);
     } catch (innerError) {
+      console.warn(`⚠️ [PARSER] Second JSON parse failed: ${innerError.message}`);
+      console.log(`🔧 [PARSER] Attempting manual JavaScript object literal parsing...`);
+      
       // Last resort: try to manually parse the JavaScript object-like syntax
       try {
         parsed = parseJavaScriptObjectLiteral(candidate);
+        console.log(`✅ [PARSER] Manual object literal parsing successful`);
       } catch (finalError) {
-        console.error("Failed to parse LLM response", { 
-          rawContent, 
-          candidate, 
-          withQuotedKeys, 
-          error: innerError,
-          finalError 
+        console.error("❌ [PARSER] All parsing attempts failed", { 
+          rawContent: rawContent.substring(0, 500) + (rawContent.length > 500 ? '...' : ''), 
+          candidate: candidate.substring(0, 500) + (candidate.length > 500 ? '...' : ''), 
+          withQuotedKeys: withQuotedKeys.substring(0, 500) + (withQuotedKeys.length > 500 ? '...' : ''), 
+          directParseError: error.message,
+          formattedParseError: innerError.message,
+          manualParseError: finalError.message
         });
         throw new Error("Unable to parse LLM response into structured data.");
       }
     }
   }
 
+  console.log(`📊 [PARSER] Parsed object type: ${typeof parsed}`);
+  console.log(`📋 [PARSER] Parsed object keys:`, Object.keys(parsed || {}));
+
   if (parsed && typeof parsed === "object" && parsed.resume_data) {
+    console.log(`🔄 [PARSER] Found nested resume_data, extracting...`);
     return parsed.resume_data;
   }
 
+  console.log(`✅ [PARSER] Returning parsed object directly`);
   return parsed;
 }
 
